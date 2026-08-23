@@ -1,0 +1,49 @@
+{
+  "name": "@smoothstream/core",
+  "version": "0.1.0",
+  "description": "Framework-neutral streaming Markdown planning and scheduling",
+  "license": "MIT",
+  "keywords": [
+    "markdown",
+    "streaming",
+    "llm"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "check:boundaries": "node scripts/verify-core-boundary.mjs",
+    "build": "npm run check:boundaries && tsup",
+    "prepack": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/core",
+  "bugs": {
+    "url": "https://github.com/stefan-joseph/smoothstream/issues"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@smoothstream/styles",
+  "version": "0.1.0",
+  "description": "Shared reveal mechanics and default prose theme for Smoothstream web adapters",
+  "license": "MIT",
+  "keywords": [
+    "markdown",
+    "streaming",
+    "css"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    "./base.css": "./base.css",
+    "./styles.css": "./styles.css"
+  },
+  "files": [
+    "base.css",
+    "styles.css"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
+    "directory": "packages/styles"
+  },
+  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/styles",
+  "bugs": {
+    "url": "https://github.com/stefan-joseph/smoothstream/issues"
+  }
+}

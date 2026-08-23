@@ -1,0 +1,296 @@
+@keyframes smoothstream-text-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes smoothstream-block-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes smoothstream-rule-in {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes smoothstream-table-row-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes smoothstream-marker-in {
+  from {
+    color: transparent;
+  }
+}
+
+@keyframes smoothstream-task-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes smoothstream-image-in {
+  from {
+    filter: blur(4px);
+    opacity: 0;
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+[data-smoothstream-motion="animate"] {
+  font-kerning: none;
+}
+
+/*
+ * The invisible generated suffix lets the browser apply the consumer's normal
+ * line-breaking rules to a buffered word before its first character appears.
+ */
+[data-smoothstream-remainder]::after {
+  content: attr(data-smoothstream-remainder);
+  visibility: hidden;
+}
+
+[data-smoothstream-kind="text"],
+[data-smoothstream-kind="inline"],
+[data-smoothstream-kind="link"] {
+  animation: smoothstream-text-in
+    var(--smoothstream-duration, 180ms) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--smoothstream-animation-delay, 0ms) both;
+}
+
+[data-smoothstream-kind="heading"],
+[data-smoothstream-kind="list-item"] {
+  animation: smoothstream-block-in
+    var(--smoothstream-duration, 260ms) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--smoothstream-animation-delay, 0ms) both;
+}
+
+[data-smoothstream-kind="block"] {
+  transform-origin: center;
+  animation: smoothstream-rule-in
+    var(--smoothstream-duration, 1200ms) cubic-bezier(0.16, 1, 0.3, 1)
+    var(--smoothstream-animation-delay, 0ms) both;
+}
+
+[data-smoothstream-kind="table-row"] {
+  animation: smoothstream-table-row-in
+    var(--smoothstream-duration, 400ms) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--smoothstream-animation-delay, 0ms) both;
+}
+
+[data-smoothstream-kind="image"] {
+  animation: smoothstream-image-in
+    var(--smoothstream-duration, 400ms) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--smoothstream-animation-delay, 0ms) both;
+}
+
+[data-smoothstream-marker="active"]::marker {
+  animation: smoothstream-marker-in
+    var(--smoothstream-duration, 400ms) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--smoothstream-animation-delay, 0ms) both;
+}
+
+[data-smoothstream-task="active"] {
+  animation: smoothstream-task-in
+    var(--smoothstream-duration, 400ms) cubic-bezier(0.22, 1, 0.36, 1)
+    var(--smoothstream-animation-delay, 0ms) both;
+}
+
+[data-smoothstream-code-copy] {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--smoothstream-duration, 400ms)
+    cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-smoothstream-code-copy][data-smoothstream-ready="true"] {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+ * Enhanced code blocks remain a real <pre>, so consumer pre styles wrap the
+ * toolbar and code together. These rules provide only the component structure
+ * needed by any optional highlighter.
+ */
+pre[data-smoothstream-code-block] {
+  overflow: hidden;
+  background-color: var(
+    --smoothstream-code-background,
+    var(
+      --smoothstream-shiki-background,
+      var(--smoothstream-code-default-background, transparent)
+    )
+  );
+  color: var(
+    --smoothstream-code-color,
+    var(
+      --smoothstream-shiki-color,
+      var(--smoothstream-code-default-color, inherit)
+    )
+  );
+  font-family: inherit;
+  font-size: inherit;
+}
+
+[data-smoothstream-code-toolbar] {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  justify-content: space-between;
+  gap: 1rem;
+  color: inherit;
+  white-space: normal;
+}
+
+[data-smoothstream-code-language] {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.875em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-smoothstream-code-copy] {
+  display: grid;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+pre[data-smoothstream-code-block] > code {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  font-size: 0.875em;
+}
+
+[data-smoothstream-code-icon-swap] {
+  position: relative;
+  display: inline-grid;
+}
+
+[data-smoothstream-code-icon] {
+  inline-size: 1rem;
+  block-size: 1rem;
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--smoothstream-icon-swap-duration, 250ms) ease-in-out,
+    filter var(--smoothstream-icon-swap-duration, 250ms) ease-in-out,
+    transform var(--smoothstream-icon-swap-duration, 250ms) ease-in-out;
+  will-change: opacity, filter, transform;
+}
+
+[data-smoothstream-code-icon-swap][data-state="copy"]
+  [data-smoothstream-code-icon="copy"],
+[data-smoothstream-code-icon-swap][data-state="check"]
+  [data-smoothstream-code-icon="check"] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+
+[data-smoothstream-code-icon-swap][data-state="copy"]
+  [data-smoothstream-code-icon="check"],
+[data-smoothstream-code-icon-swap][data-state="check"]
+  [data-smoothstream-code-icon="copy"] {
+  opacity: 0;
+  filter: blur(2px);
+  transform: scale(0.25);
+}
+
+/*
+ * Table containment is rendering behavior rather than optional typography.
+ * The shell stays fixed while only the nested viewport scrolls.
+ */
+[data-smoothstream-table-shell] {
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+[data-smoothstream-table-scroll] {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+[data-smoothstream-table-scroll] > table {
+  width: fit-content;
+  max-width: none;
+  margin: 0;
+}
+
+[data-smoothstream-table-scroll] th {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+[data-smoothstream-table-scroll] td {
+  overflow-wrap: normal;
+}
+
+[data-smoothstream-motion="none"] [data-smoothstream-code-copy],
+[data-smoothstream-motion="none"] [data-smoothstream-code-icon-swap],
+[data-smoothstream-motion="none"] [data-smoothstream-code-icon] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-smoothstream-motion-policy="system"] [data-smoothstream-unit],
+  [data-smoothstream-motion-policy="system"] [data-smoothstream-marker="active"]::marker,
+  [data-smoothstream-motion-policy="system"] [data-smoothstream-task="active"],
+  [data-smoothstream-motion-policy="system"] [data-smoothstream-code-copy],
+  [data-smoothstream-motion-policy="system"] [data-smoothstream-code-icon-swap],
+  [data-smoothstream-motion-policy="system"] [data-smoothstream-code-icon],
+  [data-smoothstream-motion-policy="none"] [data-smoothstream-unit],
+  [data-smoothstream-motion-policy="none"] [data-smoothstream-marker="active"]::marker,
+  [data-smoothstream-motion-policy="none"] [data-smoothstream-task="active"],
+  [data-smoothstream-motion-policy="none"] [data-smoothstream-code-copy],
+  [data-smoothstream-motion-policy="none"] [data-smoothstream-code-icon-swap],
+  [data-smoothstream-motion-policy="none"] [data-smoothstream-code-icon] {
+    animation: none;
+    transition: none;
+  }
+}
+

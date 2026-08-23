@@ -1,0 +1,48 @@
+{
+  "name": "@smoothstream/code",
+  "version": "0.1.0",
+  "description": "Optional Shiki syntax highlighting for Smoothstream",
+  "license": "MIT",
+  "keywords": [
+    "shiki",
+    "syntax-highlighting",
+    "markdown",
+    "streaming"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "prepack": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "@smoothstream/core": "^0.1.0"
+  },
+  "dependencies": {
+    "@shikijs/stream": "^4.4.2",
+    "shiki": "^4.4.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
+    "directory": "packages/code"
+  },
+  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/code",
+  "bugs": {
+    "url": "https://github.com/stefan-joseph/smoothstream/issues"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "@smoothstream/dom",
+  "version": "0.1.0",
+  "description": "Deterministic, paced Markdown reveal for the browser DOM",
+  "license": "MIT",
+  "keywords": [
+    "javascript",
+    "markdown",
+    "streaming",
+    "llm"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "./dist/index.js",
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && node scripts/verify-browser-boundary.mjs",
+    "prepack": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@smoothstream/core": "^0.1.0",
+    "@smoothstream/styles": "^0.1.0",
+    "property-information": "^7.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
+    "directory": "packages/dom"
+  },
+  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/dom",
+  "bugs": {
+    "url": "https://github.com/stefan-joseph/smoothstream/issues"
+  }
+}

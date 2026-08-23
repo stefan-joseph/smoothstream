@@ -1,0 +1,477 @@
+:where([data-smoothstream-theme="default"]) {
+  --smoothstream-foreground: currentColor;
+  --smoothstream-body-color: var(--smoothstream-foreground);
+  --smoothstream-heading-color: var(--smoothstream-foreground);
+  --smoothstream-link-color: var(--smoothstream-foreground);
+  --smoothstream-strong-color: var(--smoothstream-foreground);
+  --smoothstream-muted-color: color-mix(
+    in srgb,
+    var(--smoothstream-foreground) 61%,
+    transparent
+  );
+  --smoothstream-counter-color: var(--smoothstream-muted-color);
+  --smoothstream-bullet-color: color-mix(
+    in srgb,
+    var(--smoothstream-foreground) 36%,
+    transparent
+  );
+  --smoothstream-task-size: 1rem;
+  --smoothstream-task-offset: -1px;
+  --smoothstream-task-border-color: color-mix(
+    in srgb,
+    var(--smoothstream-foreground) 24%,
+    transparent
+  );
+  --smoothstream-task-border-radius: 0.25rem;
+  --smoothstream-task-checked-background: var(--smoothstream-foreground);
+  --smoothstream-task-check-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.75 8.25 6.5 11 12.25 5.25' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --smoothstream-border-color: color-mix(
+    in srgb,
+    var(--smoothstream-foreground) 8%,
+    transparent
+  );
+  --smoothstream-quote-border-color: var(--smoothstream-border-color);
+  --smoothstream-inline-code-color: color-mix(
+    in srgb,
+    var(--smoothstream-foreground) 84%,
+    transparent
+  );
+  --smoothstream-inline-code-background: color-mix(
+    in srgb,
+    var(--smoothstream-foreground) 5%,
+    transparent
+  );
+  --smoothstream-code-default-color: var(--smoothstream-inline-code-color);
+  --smoothstream-code-default-background: color-mix(
+    in srgb,
+    var(--smoothstream-foreground) 3%,
+    transparent
+  );
+  --smoothstream-table-border-color: var(--smoothstream-border-color);
+  --smoothstream-table-border-width: 1px;
+  --smoothstream-table-border-style: solid;
+  --smoothstream-table-border-radius: 0.75rem;
+  --smoothstream-table-header-background: color-mix(
+    in srgb,
+    var(--smoothstream-foreground) 3%,
+    transparent
+  );
+
+  color: var(--smoothstream-body-color);
+  font-size: 1rem;
+  line-height: 1.75;
+  overflow-wrap: break-word;
+}
+
+:where([data-smoothstream-theme="default"] > :first-child) {
+  margin-block-start: 0;
+}
+
+:where([data-smoothstream-theme="default"] > :last-child) {
+  margin-block-end: 0;
+}
+
+:where([data-smoothstream-theme="default"] p) {
+  margin-block: 1.25em;
+}
+
+:where([data-smoothstream-theme="default"] h1),
+:where([data-smoothstream-theme="default"] h2),
+:where([data-smoothstream-theme="default"] h3),
+:where([data-smoothstream-theme="default"] h4),
+:where([data-smoothstream-theme="default"] h5),
+:where([data-smoothstream-theme="default"] h6) {
+  color: var(--smoothstream-heading-color);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+:where([data-smoothstream-theme="default"] h1) {
+  margin-block: 0 0.9em;
+  font-size: 1.5em;
+  letter-spacing: -0.025em;
+}
+
+:where([data-smoothstream-theme="default"] h2) {
+  margin-block: 2em 1em;
+  font-size: 1.25em;
+  letter-spacing: -0.015em;
+}
+
+:where([data-smoothstream-theme="default"] h3) {
+  margin-block: 1.6em 0.6em;
+  font-size: 1.25em;
+}
+
+:where([data-smoothstream-theme="default"] h4) {
+  margin-block: 1.5em 0.5em;
+  font-size: 1.125em;
+}
+
+:where([data-smoothstream-theme="default"] h5),
+:where([data-smoothstream-theme="default"] h6) {
+  font-size: 1em;
+  font-weight: 400;
+}
+
+:where([data-smoothstream-theme="default"] h2 + *),
+:where([data-smoothstream-theme="default"] h3 + *),
+:where([data-smoothstream-theme="default"] h4 + *) {
+  margin-block-start: 0;
+}
+
+:where([data-smoothstream-theme="default"] a) {
+  color: var(--smoothstream-link-color);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-skip-ink: auto;
+  text-decoration-style: dotted;
+  text-underline-position: from-font;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+:where([data-smoothstream-theme="default"] strong) {
+  color: var(--smoothstream-strong-color);
+  font-weight: 650;
+}
+
+:where([data-smoothstream-theme="default"] ul),
+:where([data-smoothstream-theme="default"] ol) {
+  margin-block: 1.25em;
+  padding-inline-start: 1.625em;
+}
+
+:where([data-smoothstream-theme="default"] li) {
+  padding-inline-start: 0.375em;
+  margin-block: 0.75em;
+}
+
+:where([data-smoothstream-theme="default"] li > p) {
+  margin-block: 0;
+}
+
+:where([data-smoothstream-theme="default"] li > p + p) {
+  margin-block-start: 0.5em;
+}
+
+:where([data-smoothstream-theme="default"] ol > li)::marker {
+  color: var(--smoothstream-counter-color);
+}
+
+:where([data-smoothstream-theme="default"] ul > li)::marker {
+  color: var(--smoothstream-bullet-color);
+}
+
+:where([data-smoothstream-theme="default"] li > ul),
+:where([data-smoothstream-theme="default"] li > ol) {
+  margin-block: 0.75em;
+}
+
+:where([data-smoothstream-theme="default"] .task-list-item) {
+  display: block;
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+:where(
+  [data-smoothstream-theme="default"] .task-list-item input[type="checkbox"]
+) {
+  box-sizing: border-box;
+  display: inline-block;
+  width: var(--smoothstream-task-size);
+  height: var(--smoothstream-task-size);
+  padding: 0;
+  margin-block: 0;
+  margin-inline: -1.25rem 0.5rem;
+  border: 1px solid var(--smoothstream-task-border-color);
+  border-radius: var(--smoothstream-task-border-radius);
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  background-origin: border-box;
+  color: inherit;
+  vertical-align: middle;
+  transform: translateY(var(--smoothstream-task-offset));
+  opacity: 1;
+  print-color-adjust: exact;
+  user-select: none;
+}
+
+:where(
+  [data-smoothstream-theme="default"]
+    .task-list-item
+    input[type="checkbox"]:checked
+) {
+  border-color: var(--smoothstream-task-checked-background);
+  background-color: var(--smoothstream-task-checked-background);
+  background-image: var(--smoothstream-task-check-image);
+  background-position: 50%;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-blend-mode: difference;
+}
+
+/* Safari's native list-marker gutter is wider relative to the task control. */
+@supports (font: -apple-system-body) and (-webkit-appearance: none) {
+  :where(
+    [data-smoothstream-theme="default"]
+      .task-list-item
+      input[type="checkbox"]
+  ) {
+    margin-inline: -1.5rem 0.5rem;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(
+    [data-smoothstream-theme="default"]
+      .task-list-item
+      input[type="checkbox"]
+  ) {
+    border: 0;
+    -webkit-appearance: auto;
+    appearance: auto;
+    background: none;
+  }
+}
+
+:where([data-smoothstream-theme="default"] blockquote) {
+  margin-block: 1.6em;
+  margin-inline: 0;
+  padding-inline-start: 1em;
+  border-inline-start: 0.25rem solid var(--smoothstream-quote-border-color);
+  color: var(--smoothstream-heading-color);
+  font-style: italic;
+  font-weight: 500;
+}
+
+:where([data-smoothstream-theme="default"] blockquote p:first-child) {
+  margin-block-start: 0;
+}
+
+:where([data-smoothstream-theme="default"] blockquote p:last-child) {
+  margin-block-end: 0;
+}
+
+:where([data-smoothstream-theme="default"] hr) {
+  margin-block: 3em;
+  border: 0;
+  border-block-start: 1px solid var(--smoothstream-border-color);
+}
+
+:where([data-smoothstream-theme="default"] code) {
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+:where([data-smoothstream-theme="default"] code:not(pre code)) {
+  padding: 0.18em 0.35em;
+  border-radius: 0.3em;
+  background: var(--smoothstream-inline-code-background);
+  color: var(--smoothstream-inline-code-color);
+  font-size: 0.875em;
+  font-weight: 500;
+}
+
+:where([data-smoothstream-theme="default"] pre) {
+  margin-block: 1.7em;
+  padding: 0.9em 1.15em;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  background-color: var(
+    --smoothstream-code-background,
+    var(
+      --smoothstream-shiki-background,
+      var(--smoothstream-code-default-background)
+    )
+  );
+  color: var(
+    --smoothstream-code-color,
+    var(--smoothstream-shiki-color, var(--smoothstream-code-default-color))
+  );
+  scrollbar-color: var(
+      --smoothstream-code-scrollbar-color,
+      color-mix(in srgb, currentColor 24%, transparent)
+    )
+    transparent;
+  scrollbar-width: thin;
+}
+
+:where([data-smoothstream-theme="default"] pre)::-webkit-scrollbar {
+  height: 8px;
+}
+
+:where([data-smoothstream-theme="default"] pre)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:where([data-smoothstream-theme="default"] pre)::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-color: var(
+    --smoothstream-code-scrollbar-color,
+    color-mix(in srgb, currentColor 24%, transparent)
+  );
+  background-clip: padding-box;
+}
+
+:where(
+    [data-smoothstream-theme="default"] pre
+  )::-webkit-scrollbar-thumb:hover {
+  background-color: var(
+    --smoothstream-code-scrollbar-hover-color,
+    color-mix(in srgb, currentColor 40%, transparent)
+  );
+}
+
+:where([data-smoothstream-theme="default"] pre code) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.875em;
+  font-weight: inherit;
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+:where([data-smoothstream-theme="default"] [data-smoothstream-code-block]) {
+  border: 1px solid
+    var(
+      --smoothstream-code-border-color,
+      color-mix(in srgb, currentColor 6%, transparent)
+    );
+  padding: 0;
+}
+
+:where(
+  [data-smoothstream-theme="default"] [data-smoothstream-code-toolbar]
+) {
+  min-height: 1.75rem;
+  padding: 0.55rem 1rem 0;
+  line-height: 1.5;
+}
+
+:where(
+  [data-smoothstream-theme="default"] [data-smoothstream-code-language]
+) {
+  opacity: 0.65;
+}
+
+:where(
+  [data-smoothstream-theme="default"] [data-smoothstream-code-icon-swap]
+) {
+  inline-size: 1rem;
+  block-size: 1rem;
+  transition: opacity var(--smoothstream-icon-swap-duration, 250ms)
+    ease-in-out;
+}
+
+:where(
+  [data-smoothstream-theme="default"]
+    [data-smoothstream-code-icon-swap][data-state="copy"]
+) {
+  opacity: 0.65;
+}
+
+:where(
+  [data-smoothstream-theme="default"]
+    [data-smoothstream-code-icon-swap][data-state="check"]
+) {
+  opacity: 1;
+}
+
+:where(
+  [data-smoothstream-theme="default"]
+    [data-smoothstream-code-copy]:hover
+    [data-smoothstream-code-icon-swap][data-state="copy"]
+),
+:where(
+  [data-smoothstream-theme="default"]
+    [data-smoothstream-code-copy]:focus-visible
+    [data-smoothstream-code-icon-swap][data-state="copy"]
+) {
+  opacity: 1;
+}
+
+:where(
+  [data-smoothstream-theme="default"] [data-smoothstream-code-block] > code
+) {
+  padding: 0.55em 1.15em 0.9em;
+}
+
+:where(
+  [data-smoothstream-theme="default"] [data-smoothstream-table-shell]
+) {
+  margin-block: 2em;
+  border: var(--smoothstream-table-border-width)
+    var(--smoothstream-table-border-style)
+    var(--smoothstream-table-border-color);
+  border-radius: var(--smoothstream-table-border-radius);
+}
+
+:where([data-smoothstream-theme="default"] table) {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875em;
+  line-height: 1.4;
+  text-align: start;
+}
+
+:where([data-smoothstream-theme="default"] th) {
+  padding: 0.5rem 0.625rem;
+  background: var(--smoothstream-table-header-background);
+  color: var(--smoothstream-heading-color);
+  font-weight: 600;
+  text-align: start;
+  vertical-align: bottom;
+}
+
+:where([data-smoothstream-theme="default"] td) {
+  padding: 0.5rem 0.625rem;
+  vertical-align: top;
+}
+
+:where([data-smoothstream-theme="default"] tbody tr:not(:first-child) td) {
+  border-block-start: 1px solid var(--smoothstream-table-border-color);
+}
+
+:where([data-smoothstream-theme="default"] th:first-child) {
+  border-start-start-radius: max(
+    0px,
+    calc(
+      var(--smoothstream-table-border-radius) -
+        var(--smoothstream-table-border-width)
+    )
+  );
+}
+
+:where([data-smoothstream-theme="default"] th:last-child) {
+  border-start-end-radius: max(
+    0px,
+    calc(
+      var(--smoothstream-table-border-radius) -
+        var(--smoothstream-table-border-width)
+    )
+  );
+}
+
+:where([data-smoothstream-theme="default"] img) {
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+/*
+ * Standalone status is explicit because element-count selectors such as
+ * :only-child treat reveal spans and compacted text nodes differently.
+ */
+:where(
+  [data-smoothstream-theme="default"]
+    img[data-smoothstream-image-standalone]
+) {
+  display: block;
+  margin-block: 2em;
+}

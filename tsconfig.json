@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "ES2022.Intl", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "@smoothstream/code": ["./packages/code/src/index.ts"],
+      "@smoothstream/core": ["./packages/core/src/index.ts"],
+      "@smoothstream/dom": ["./packages/dom/src/index.ts"],
+      "@smoothstream/react": ["./packages/react/src/index.ts"],
+      "@smoothstream/react/styles.css": ["./packages/styles/styles.css"],
+      "@smoothstream/styles/base.css": ["./packages/styles/base.css"],
+      "@smoothstream/styles/styles.css": ["./packages/styles/styles.css"]
+    },
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "types": ["vitest/globals", "node"]
+  },
+  "include": ["packages", "test", "vitest.config.ts"]
+}

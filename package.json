@@ -1,0 +1,52 @@
+{
+  "name": "smoothstream",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Deterministic, paced Markdown reveal for React and the browser DOM",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-joseph/smoothstream.git"
+  },
+  "homepage": "https://github.com/stefan-joseph/smoothstream",
+  "bugs": {
+    "url": "https://github.com/stefan-joseph/smoothstream/issues"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=@smoothstream/core && npm run build --workspace=@smoothstream/styles --if-present && npm run build --workspace=@smoothstream/react && npm run build --workspace=@smoothstream/dom && npm run build --workspace=@smoothstream/code",
+    "check:boundaries": "npm run check:boundaries --workspace=@smoothstream/core",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "npm run check:boundaries && tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@types/hast": "^3.0.4",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/unist": "^3.0.3",
+    "hast-util-to-jsx-runtime": "^2.3.6",
+    "jsdom": "^27.3.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "4.1.10"
+  },
+  "allowScripts": {
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.2": true,
+    "fsevents@2.3.3": true
+  }
+}
