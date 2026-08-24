@@ -1,6 +1,7 @@
 import type { CodeHighlighter, MarkdownReveal } from "@smoothstream/core";
 
-export type SmoothstreamMotion = "system" | "animate" | "none";
+export type SmoothstreamMode = "streaming" | "static";
+export type SmoothstreamReducedMotion = "system" | "always" | "never";
 export type SmoothstreamReveal = MarkdownReveal;
 
 export interface SmoothstreamProps {
@@ -15,8 +16,10 @@ export interface SmoothstreamProps {
   receiving?: boolean;
   /** Base cadence in milliseconds; word mode preserves it while grouping characters. @default 3 */
   interval?: number;
-  /** Motion policy: follow the system, always animate, or always reduce. @default "system" */
-  motion?: SmoothstreamMotion;
+  /** Progressively reveal streaming content or render completed Markdown immediately. @default "streaming" */
+  mode?: SmoothstreamMode;
+  /** Reduced-motion policy: follow the system preference, always reduce, or never reduce. @default "system" */
+  reducedMotion?: SmoothstreamReducedMotion;
   /** Reveal flowing text by character or by complete word. @default "character" */
   reveal?: SmoothstreamReveal;
   /** Disable Smoothstream's default prose theme while retaining reveal and layout behavior. */

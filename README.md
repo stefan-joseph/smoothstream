@@ -69,7 +69,7 @@ stream.destroy();
 ```
 
 It uses the same core parser, structural stabilization, schedule, timing
-options, motion policies, semantic HTML, automatic styles, and optional
+options, reduced-motion policies, semantic HTML, automatic styles, and optional
 syntax highlighting as the React adapter.
 
 Markdown is append-only for the lifetime of the instance. Transport packet
@@ -142,10 +142,11 @@ Smoothstream distinguish a Markdown snapshot that may still change shape from a
 complete response. A complete response needs only that snapshot and animates
 through the same scheduler.
 
-The `motion` option controls motion policy. Its default, `"system"`, respects
-`prefers-reduced-motion`; `"animate"` explicitly ignores that preference and
-uses Smoothstream's animations, while `"none"` always renders without
-motion. With motion disabled, Markdown stabilization remains active, but every
+The `reducedMotion` option controls how Smoothstream handles
+`prefers-reduced-motion`. Its default, `"system"`, respects the system
+preference; `"always"` always uses Smoothstream's reduced-motion behavior,
+while `"never"` ignores the preference and permits animation. With motion
+reduced, Markdown stabilization remains active, but every
 currently safe unit renders immediately as semantic HTML without character
 pacing, temporary reveal spans, fades, transforms, or layout transitions. An
 unresolved image remains a real, accessibly hidden `<img>` while it loads and
@@ -155,18 +156,23 @@ system preference changes. Remounting applies the newly selected policy to the
 next response.
 
 The published React entry is marked as a Client Component, while remaining
-safe for frameworks such as Next.js to prerender and hydrate. For `"system"`,
-the server and first hydration render share an empty motion-pending shell; the
-browser then resolves `prefers-reduced-motion` before any Markdown becomes
-visible. A stream mounted with empty children therefore resolves its motion
-policy while it is waiting for the first model token. Later client-only mounts
-resolve synchronously. Forced `"animate"` and `"none"` modes are already
-deterministic during server rendering and do not need the pending state.
+safe for frameworks such as Next.js to prerender and hydrate. In streaming mode
+with `reducedMotion="system"`, the server and first hydration render share an empty
+motion-pending shell; the browser then resolves `prefers-reduced-motion` before
+any Markdown becomes visible. A stream mounted with empty children therefore
+resolves its reduced-motion policy while it is waiting for the first model
+token. Later client-only mounts resolve synchronously. Forced `"always"` and
+`"never"` reduced-motion policies are already deterministic during server
+rendering and do not need the pending state.
 
-Use `motion="none"` for previously stored messages that should render
-immediately through the same Markdown pipeline. Once `receiving` becomes
-`false`, treat that instance as complete and start a new one for a different
-response.
+`mode` controls content presentation separately from reduced-motion policy. It defaults
+to `"streaming"`. Use `mode="static"` for previously stored messages or other
+completed Markdown that should render immediately through the same semantic
+pipeline. Static mode produces server-renderable settled HTML without reveal
+spans or a streaming completion announcement, while `reducedMotion="system"` continues
+to govern interactive feedback such as the code copy control. Once a streaming
+instance's `receiving` prop becomes `false`, treat that instance as complete and
+start a new one for a different response.
 
 Block and component reveal strategies remain intentionally internal, while
 Smoothstream provides opinionated but configurable text timing. `reveal` selects
@@ -360,6 +366,22 @@ expecting it to be a direct child of the Markdown root:
   /* Consumer typography and cell styling. */
 }
 ```
+
+Inline and fenced `code` use a system monospace stack. Body copy still
+inherits the surrounding application font. The code face and sizes are
+tokens; fenced size follows inline size unless you override it:
+
+```css
+.assistant-markdown {
+  --smoothstream-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --smoothstream-inline-code-font-size: 0.875em;
+  --smoothstream-code-font-size: 0.8125em;
+}
+```
+
+Fenced `pre` vertical margin is `--smoothstream-code-margin-block`. It defaults to `0.75em` (12px at a 16px host). The `pre` inherits the host size, so this follows the selected type size rather than the smaller code face.
+
+`h1` type is `1.5em` (24px at a 16px host). Its vertical margins are `--smoothstream-h1-margin-block-start` (`1.5em`, 24px) and `--smoothstream-h1-margin-block-end` (`0.5em`, 8px), measured on the theme host so they do not grow with the heading’s own size. `h2` is `1.25em` (20px) with `--smoothstream-h2-margin-block-start` (`1.5em`, 24px) and `--smoothstream-h2-margin-block-end` (`0.25em`, 4px). `h3` is `1.125em` (18px) with `--smoothstream-h3-margin-block-start` (`1.25em`, 20px) and `--smoothstream-h3-margin-block-end` (`0.25em`, 4px). `h4` is `1em` (16px, weight 600) with `--smoothstream-h4-margin-block-start` / `--smoothstream-h4-margin-block-end` (`1em` / `0.25em`). `h5` and `h6` use the same size and margins with weight 400 (`--smoothstream-h5-margin-block-*`, `--smoothstream-h6-margin-block-*`). Paragraphs use `--smoothstream-p-margin-block-start` (`0.5em`, 8px) and `--smoothstream-p-margin-block-end` (`1em`, 16px). `ul` uses `--smoothstream-ul-margin-block-start` (`0.5em`, 8px) and `--smoothstream-ul-margin-block-end` (`1em`, 16px). `ol` uses `--smoothstream-ol-margin-block-start` / `--smoothstream-ol-margin-block-end` with the same defaults. Unordered list items use `--smoothstream-ul-li-margin-block` (`0.25em`, 4px). Ordered list items use `--smoothstream-ol-li-margin-block` with the same default. Nested lists use `--smoothstream-li-ul-margin-block` and `--smoothstream-li-ol-margin-block` (`0.25em`, 4px). Blockquotes use `--smoothstream-blockquote-margin-block` (`1em`, 16px). In a loose `ul` or `ol` item, the first paragraph has no top margin; later paragraphs keep the paragraph tokens. Horizontal rules use `--smoothstream-hr-margin-block` (`1.75em`, 28px). The table frame’s vertical margin is `--smoothstream-table-margin-block` (`0.5em`, 8px at a 16px host). Standalone images use `--smoothstream-image-margin-block` (`1.5em`, 24px). The first child of the Markdown root has no top margin and the last child has no bottom margin.
 
 An installed Shiki theme supplies the fenced-code foreground and background.
 Application tokens still take precedence when the surrounding design should

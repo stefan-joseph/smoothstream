@@ -112,7 +112,7 @@ describe("Smoothstream reduced motion", () => {
     const view = render(
       <Smoothstream
         receiving
-        motion="none"
+        reducedMotion="always"
       >
         {"Immediately readable.\n\n"}
       </Smoothstream>,
@@ -126,7 +126,7 @@ describe("Smoothstream reduced motion", () => {
     act(() => view.rerender(
       <Smoothstream
         receiving={false}
-        motion="none"
+        reducedMotion="always"
       >
         {"Immediately readable.\n\n"}
       </Smoothstream>,
@@ -144,7 +144,7 @@ describe("Smoothstream reduced motion", () => {
     vi.stubGlobal("matchMedia", preference.matchMedia);
 
     const { container } = render(
-      <Smoothstream motion="none">{"Motion disabled."}</Smoothstream>,
+      <Smoothstream reducedMotion="always">{"Motion disabled."}</Smoothstream>,
     );
 
     expect(container.querySelector("[data-smoothstream]")).toHaveAttribute(
@@ -152,8 +152,8 @@ describe("Smoothstream reduced motion", () => {
       "none",
     );
     expect(container.querySelector("[data-smoothstream]")).toHaveAttribute(
-      "data-smoothstream-motion-policy",
-      "none",
+      "data-smoothstream-reduced-motion",
+      "always",
     );
     expect(container.querySelector("p")).toHaveTextContent("Motion disabled.");
     expect(container.querySelectorAll("[data-smoothstream-unit]")).toHaveLength(0);
@@ -164,7 +164,7 @@ describe("Smoothstream reduced motion", () => {
     vi.stubGlobal("matchMedia", preference.matchMedia);
 
     const { container } = render(
-      <Smoothstream motion="animate">{"Forced animation."}</Smoothstream>,
+      <Smoothstream reducedMotion="never">{"Forced animation."}</Smoothstream>,
     );
 
     expect(container.querySelector("[data-smoothstream]")).toHaveAttribute(
@@ -172,8 +172,8 @@ describe("Smoothstream reduced motion", () => {
       "animate",
     );
     expect(container.querySelector("[data-smoothstream]")).toHaveAttribute(
-      "data-smoothstream-motion-policy",
-      "animate",
+      "data-smoothstream-reduced-motion",
+      "never",
     );
     expect(container.querySelector("[data-smoothstream]")).toHaveStyle({
       "--smoothstream-duration": "1000ms",
@@ -183,15 +183,15 @@ describe("Smoothstream reduced motion", () => {
       .toBeGreaterThan(0);
   });
 
-  it("does not replay a mounted response when its policy changes from none to animate", () => {
+  it("does not replay a mounted response when reduced motion changes from always to never", () => {
     const preference = reducedMotionQuery(false);
     vi.stubGlobal("matchMedia", preference.matchMedia);
     const view = render(
-      <Smoothstream motion="none">{"Already visible."}</Smoothstream>,
+      <Smoothstream reducedMotion="always">{"Already visible."}</Smoothstream>,
     );
 
     act(() => view.rerender(
-      <Smoothstream motion="animate">{"Already visible."}</Smoothstream>,
+      <Smoothstream reducedMotion="never">{"Already visible."}</Smoothstream>,
     ));
 
     expect(view.container.querySelector("[data-smoothstream]")).toHaveAttribute(
@@ -298,7 +298,7 @@ describe("Smoothstream reduced motion", () => {
       "",
     ].join("\n");
     const { container } = render(
-      <Smoothstream motion="none">{table}</Smoothstream>,
+      <Smoothstream reducedMotion="always">{table}</Smoothstream>,
     );
     const headers = container.querySelectorAll("th");
     const cells = container.querySelectorAll("td");

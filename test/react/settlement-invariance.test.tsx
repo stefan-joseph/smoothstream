@@ -35,7 +35,7 @@ describe("settlement invariance", () => {
       <Smoothstream
         duration={2_000}
         interval={1}
-        motion="animate"
+        reducedMotion="never"
       >
         {source}
       </Smoothstream>,

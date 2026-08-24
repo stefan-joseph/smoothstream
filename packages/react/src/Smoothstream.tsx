@@ -21,6 +21,7 @@ import {
   renderHast,
 } from "./render-hast";
 import type {
+  SmoothstreamMode,
   SmoothstreamProps,
   SmoothstreamReveal,
 } from "./types";
@@ -47,6 +48,7 @@ const screenReaderOnlyStyle: CSSProperties = {
 interface SmoothstreamPlaybackProps extends Omit<SmoothstreamProps, "children"> {
   duration: number;
   interval: number;
+  mode: SmoothstreamMode;
   motionDisabled: boolean;
   reveal: SmoothstreamReveal;
   source: string;
@@ -58,8 +60,9 @@ const SmoothstreamPlayback = memo(({
   duration,
   receiving = false,
   interval,
-  motion = "system",
+  mode,
   motionDisabled,
+  reducedMotion = "system",
   reveal,
   source,
   unstyled = false,
@@ -104,16 +107,17 @@ const SmoothstreamPlayback = memo(({
     [codeHighlighter, codeHighlighting.highlights, plan.units],
   );
   const playbackUnitSignature = playbackUnits.map((unit) => unit.id).join("|");
+  const presentationImmediate = motionDisabled || mode === "static";
   const immediate = useMemo(
-    () => motionDisabled
+    () => presentationImmediate
       ? session.immediate(preparedInput, playbackUnits)
       : undefined,
-    [motionDisabled, playbackUnits, preparedInput, session],
+    [playbackUnits, preparedInput, presentationImmediate, session],
   );
-  const effectiveDuration = motionDisabled ? 0 : duration;
+  const revealDuration = presentationImmediate ? 0 : duration;
   const imageReadiness = useImageReadiness(
     preparedInput.images,
-    effectiveDuration,
+    revealDuration,
   );
   const imageReadinessSignature = [...imageReadiness.images]
     .map(([id, readiness]) => `${id}:${readiness.status}:${readiness.readyAt}`)
@@ -133,11 +137,13 @@ const SmoothstreamPlayback = memo(({
   }, [preparedInput, session]);
 
   useEffect(() => {
-    setAnnouncerMounted(true);
-  }, []);
+    if (mode === "streaming") {
+      setAnnouncerMounted(true);
+    }
+  }, [mode]);
 
   useEffect(() => {
-    if (motionDisabled) {
+    if (presentationImmediate) {
       return;
     }
 
@@ -173,7 +179,7 @@ const SmoothstreamPlayback = memo(({
 
     frameId = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(frameId);
-  }, [motionDisabled, playbackUnitSignature]);
+  }, [playbackUnitSignature, presentationImmediate]);
 
   const content = renderHast(
     plan.tree,
@@ -193,7 +199,7 @@ const SmoothstreamPlayback = memo(({
   useAnimationPhase(rootRef);
 
   useEffect(() => {
-    if (!announcerMounted) {
+    if (mode === "static" || !announcerMounted) {
       return;
     }
 
@@ -225,6 +231,7 @@ const SmoothstreamPlayback = memo(({
     setCompletionAnnouncement(COMPLETION_ANNOUNCEMENT);
   }, [
     announcerMounted,
+    mode,
     presentation.allPlannedUnitsCompacted,
     imageReadinessSignature,
     receiving,
@@ -233,7 +240,8 @@ const SmoothstreamPlayback = memo(({
     source,
   ]);
 
-  const announcer = announcerMounted && typeof document !== "undefined"
+  const announcer = mode === "streaming" && announcerMounted &&
+      typeof document !== "undefined"
     ? createPortal(
       createElement(
         "div",
@@ -258,13 +266,14 @@ const SmoothstreamPlayback = memo(({
       {
         className,
         "data-smoothstream": true,
+        "data-smoothstream-mode": mode,
         "data-smoothstream-theme": unstyled ? undefined : "default",
         "data-smoothstream-motion": motionDisabled ? "none" : "animate",
-        "data-smoothstream-motion-policy": motion,
+        "data-smoothstream-reduced-motion": reducedMotion,
         "data-smoothstream-reveal": reveal,
         ref: rootRef,
         style: {
-          "--smoothstream-duration": `${effectiveDuration}ms`,
+          "--smoothstream-duration": `${motionDisabled ? 0 : duration}ms`,
           "--smoothstream-interval": `${motionDisabled ? 0 : interval}ms`,
         } as CSSProperties,
       },
@@ -303,20 +312,22 @@ export const Smoothstream = (
 ): ReactElement => {
   const duration = props.duration ?? 1_000;
   const interval = props.interval ?? 3;
+  const mode = props.mode ?? "streaming";
   const reveal = props.reveal ?? "character";
-  const resolvedMotion = useReducedMotion(props.motion ?? "system");
+  const resolvedMotion = useReducedMotion(props.reducedMotion ?? "system");
   const input = useCoalescedInput(
     markdownFromChildren(props.children),
     props.receiving ?? false,
   );
 
-  if (resolvedMotion === "pending") {
+  if (resolvedMotion === "pending" && mode === "streaming") {
     return createElement("div", {
       className: props.className,
       "data-smoothstream": true,
+      "data-smoothstream-mode": mode,
       "data-smoothstream-theme": props.unstyled ? undefined : "default",
       "data-smoothstream-motion": "pending",
-      "data-smoothstream-motion-policy": "system",
+      "data-smoothstream-reduced-motion": "system",
       "data-smoothstream-reveal": reveal,
       style: {
         "--smoothstream-duration": `${duration}ms`,
@@ -331,7 +342,8 @@ export const Smoothstream = (
     duration,
     receiving: input.receiving,
     interval,
-    key: `${interval}:${duration}:${reveal}`,
+    key: `${interval}:${duration}:${mode}:${reveal}`,
+    mode,
     motionDisabled: resolvedMotion === "none",
     reveal,
     source: input.source,

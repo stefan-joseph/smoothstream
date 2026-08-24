@@ -123,6 +123,53 @@ renderer.update(message.content, { receiving });
 
 The renderer needs the Markdown accumulated so far. Smoothstream handles the buffering, parsing, scheduling, and transition choreography internally.`;
 
+const proseWithLists = `# Reading a longer answer
+
+When a response is mostly prose, the eye needs consecutive paragraphs to sit closer than the breaks around headings. The first stretch of this answer is three paragraphs on purpose, so that stack is visible before any other block appears.
+
+The second paragraph continues the same thought without a heading to reset the rhythm. It should feel like the next beat in one explanation, not a new section.
+
+The third paragraph closes the opening. After this, a heading should open more space than these three paragraphs opened between themselves.
+
+## What the reader is doing
+
+People scan for a heading, then drop into a short run of sentences. If that run is only one paragraph long, you never see whether paragraph spacing holds up. This section keeps two paragraphs together before the first list.
+
+The second paragraph here is still part of the same scan. A short list should interrupt it without looking like another heading break.
+
+- Keep the first item to one line.
+- Let the second item stay equally short.
+- Close with a third item and return to prose.
+
+After a tight list, the next paragraphs should resume the same paragraph stack as before. This one starts that resume.
+
+This second paragraph confirms the list did not steal the prose rhythm. The following heading is a smaller step than the one above.
+
+### A narrower turn
+
+One paragraph can introduce a still-shorter list. The list is only two items, then prose continues.
+
+- First, name the constraint.
+- Second, name the follow-through.
+
+Now the answer returns to a longer stretch of paragraphs. This is the first of three, so the stack can be compared with the opening again.
+
+The middle paragraph is only here to keep that stack honest. Nothing in it needs a list or a heading of its own.
+
+The last paragraph in this run should still sit on the paragraph tokens. The next heading is the last major break.
+
+## Closing the loop
+
+A numbered list is a sequence, not a cluster of bullets. It is short on purpose.
+
+1. Restate the question in one line.
+2. Give the constraint that changed the answer.
+3. Leave the reader on ordinary prose.
+
+The paragraph after the numbers should feel like the same body copy as the opening, not like a caption for the list.
+
+The final paragraph is another consecutive block, so the last thing in the answer is still a paragraph stack rather than a single trailing sentence.`;
+
 const delimiterRegression = `# Delimiter containment
 
 **This opening delimiter is intentionally never closed.
@@ -236,7 +283,7 @@ const visible = messages.filter((message) => message.content.length > 0);
 {
   "interval": 3,
   "duration": 1000,
-  "motion": "system"
+  "reducedMotion": "system"
 }
 \`\`\`
 
@@ -314,7 +361,7 @@ const delayedInlineMarkup: ReadonlyArray<StreamDelivery> = [
 
 const longInlineCode = `# Long inline code
 
-A longer expression should remain inline and wrap naturally when needed: \`renderer.update(message.content, { receiving: status === "streaming", interval: 3, duration: 1000, motion: "system" })\` while the surrounding sentence continues normally after it.`;
+A longer expression should remain inline and wrap naturally when needed: \`renderer.update(message.content, { receiving: status === "streaming", interval: 3, duration: 1000, reducedMotion: "system" })\` while the surrounding sentence continues normally after it.`;
 
 const inlineSettlement = `# Inline settlement boundary
 
@@ -677,6 +724,11 @@ export const streamCases: ReadonlyArray<StreamCase> = [
     id: "showcase",
     label: "Showcase",
     deliveries: chunkMarkdown(showcase),
+  },
+  {
+    id: "prose-with-lists",
+    label: "Prose: paragraphs and lists",
+    deliveries: chunkMarkdown(proseWithLists),
   },
   {
     id: "stress-fast-long-response",

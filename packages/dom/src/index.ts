@@ -4,8 +4,9 @@ import "@smoothstream/styles/styles.css";
 export { createSmoothstream } from "./controller";
 export type {
   SmoothstreamController,
-  SmoothstreamMotion,
+  SmoothstreamMode,
   SmoothstreamOptions,
+  SmoothstreamReducedMotion,
   SmoothstreamReveal,
   SmoothstreamUpdateOptions,
 } from "./types";

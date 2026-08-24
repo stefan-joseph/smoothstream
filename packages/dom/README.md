@@ -17,6 +17,14 @@ const stream = createSmoothstream(container, {
 stream.update(markdown, { receiving });
 ```
 
+Streaming mode is the default. Use `mode: "static"` for completed Markdown that
+should render immediately while retaining interactive control transitions.
+
+```ts
+const message = createSmoothstream(container, { mode: "static" });
+message.update(previousMessage.content);
+```
+
 `codeHighlighter` is optional. Install `@smoothstream/code` only when fenced
 code should be highlighted.
 

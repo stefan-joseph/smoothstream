@@ -1,3 +1,75 @@
+@property --smoothstream-h1-margin-block-start {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h1-margin-block-end {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h2-margin-block-start {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h2-margin-block-end {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h3-margin-block-start {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h3-margin-block-end {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h4-margin-block-start {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h4-margin-block-end {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h5-margin-block-start {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h5-margin-block-end {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h6-margin-block-start {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@property --smoothstream-h6-margin-block-end {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 :where([data-smoothstream-theme="default"]) {
   --smoothstream-foreground: currentColor;
   --smoothstream-body-color: var(--smoothstream-foreground);
@@ -9,12 +81,8 @@
     var(--smoothstream-foreground) 61%,
     transparent
   );
-  --smoothstream-counter-color: var(--smoothstream-muted-color);
-  --smoothstream-bullet-color: color-mix(
-    in srgb,
-    var(--smoothstream-foreground) 36%,
-    transparent
-  );
+  --smoothstream-counter-color: var(--smoothstream-body-color);
+  --smoothstream-bullet-color: var(--smoothstream-body-color);
   --smoothstream-task-size: 1rem;
   --smoothstream-task-offset: -1px;
   --smoothstream-task-border-color: color-mix(
@@ -41,16 +109,49 @@
     var(--smoothstream-foreground) 5%,
     transparent
   );
+  --smoothstream-inline-code-font-size: 0.875em;
   --smoothstream-code-default-color: var(--smoothstream-inline-code-color);
   --smoothstream-code-default-background: color-mix(
     in srgb,
     var(--smoothstream-foreground) 3%,
     transparent
   );
+  --smoothstream-code-padding-inline: 1rem;
+  --smoothstream-code-margin-block: 0.75em;
+  --smoothstream-p-margin-block-start: 0.5em;
+  --smoothstream-p-margin-block-end: 1em;
+  --smoothstream-ul-margin-block-start: 0.5em;
+  --smoothstream-ul-margin-block-end: 1em;
+  --smoothstream-ol-margin-block-start: 0.5em;
+  --smoothstream-ol-margin-block-end: 1em;
+  --smoothstream-ul-li-margin-block: 0.25em;
+  --smoothstream-ol-li-margin-block: 0.25em;
+  --smoothstream-li-ul-margin-block: 0.25em;
+  --smoothstream-li-ol-margin-block: 0.25em;
+  --smoothstream-blockquote-margin-block: 1em;
+  --smoothstream-hr-margin-block: 1.75em;
+  --smoothstream-h1-margin-block-start: 1.5em;
+  --smoothstream-h1-margin-block-end: 0.5em;
+  --smoothstream-h2-margin-block-start: 1.5em;
+  --smoothstream-h2-margin-block-end: 0.25em;
+  --smoothstream-h3-margin-block-start: 1.25em;
+  --smoothstream-h3-margin-block-end: 0.25em;
+  --smoothstream-h4-margin-block-start: 1em;
+  --smoothstream-h4-margin-block-end: 0.25em;
+  --smoothstream-h5-margin-block-start: 1em;
+  --smoothstream-h5-margin-block-end: 0.25em;
+  --smoothstream-h6-margin-block-start: 1em;
+  --smoothstream-h6-margin-block-end: 0.25em;
+  --smoothstream-code-font-size: var(--smoothstream-inline-code-font-size);
+  --smoothstream-font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
   --smoothstream-table-border-color: var(--smoothstream-border-color);
   --smoothstream-table-border-width: 1px;
   --smoothstream-table-border-style: solid;
   --smoothstream-table-border-radius: 0.75rem;
+  --smoothstream-table-margin-block: 0.5em;
+  --smoothstream-image-margin-block: 1.5em;
   --smoothstream-table-header-background: color-mix(
     in srgb,
     var(--smoothstream-foreground) 3%,
@@ -59,20 +160,13 @@
 
   color: var(--smoothstream-body-color);
   font-size: 1rem;
-  line-height: 1.75;
+  line-height: 1.625;
   overflow-wrap: break-word;
 }
 
-:where([data-smoothstream-theme="default"] > :first-child) {
-  margin-block-start: 0;
-}
-
-:where([data-smoothstream-theme="default"] > :last-child) {
-  margin-block-end: 0;
-}
-
 :where([data-smoothstream-theme="default"] p) {
-  margin-block: 1.25em;
+  margin-block-start: var(--smoothstream-p-margin-block-start);
+  margin-block-end: var(--smoothstream-p-margin-block-end);
 }
 
 :where([data-smoothstream-theme="default"] h1),
@@ -87,37 +181,43 @@
 }
 
 :where([data-smoothstream-theme="default"] h1) {
-  margin-block: 0 0.9em;
+  margin-block-start: var(--smoothstream-h1-margin-block-start);
+  margin-block-end: var(--smoothstream-h1-margin-block-end);
   font-size: 1.5em;
   letter-spacing: -0.025em;
 }
 
 :where([data-smoothstream-theme="default"] h2) {
-  margin-block: 2em 1em;
+  margin-block-start: var(--smoothstream-h2-margin-block-start);
+  margin-block-end: var(--smoothstream-h2-margin-block-end);
   font-size: 1.25em;
   letter-spacing: -0.015em;
 }
 
 :where([data-smoothstream-theme="default"] h3) {
-  margin-block: 1.6em 0.6em;
-  font-size: 1.25em;
-}
-
-:where([data-smoothstream-theme="default"] h4) {
-  margin-block: 1.5em 0.5em;
+  margin-block-start: var(--smoothstream-h3-margin-block-start);
+  margin-block-end: var(--smoothstream-h3-margin-block-end);
   font-size: 1.125em;
 }
 
-:where([data-smoothstream-theme="default"] h5),
-:where([data-smoothstream-theme="default"] h6) {
+:where([data-smoothstream-theme="default"] h4) {
+  margin-block-start: var(--smoothstream-h4-margin-block-start);
+  margin-block-end: var(--smoothstream-h4-margin-block-end);
+  font-size: 1em;
+}
+
+:where([data-smoothstream-theme="default"] h5) {
+  margin-block-start: var(--smoothstream-h5-margin-block-start);
+  margin-block-end: var(--smoothstream-h5-margin-block-end);
   font-size: 1em;
   font-weight: 400;
 }
 
-:where([data-smoothstream-theme="default"] h2 + *),
-:where([data-smoothstream-theme="default"] h3 + *),
-:where([data-smoothstream-theme="default"] h4 + *) {
-  margin-block-start: 0;
+:where([data-smoothstream-theme="default"] h6) {
+  margin-block-start: var(--smoothstream-h6-margin-block-start);
+  margin-block-end: var(--smoothstream-h6-margin-block-end);
+  font-size: 1em;
+  font-weight: 400;
 }
 
 :where([data-smoothstream-theme="default"] a) {
@@ -138,34 +238,51 @@
 
 :where([data-smoothstream-theme="default"] ul),
 :where([data-smoothstream-theme="default"] ol) {
-  margin-block: 1.25em;
   padding-inline-start: 1.625em;
+}
+
+:where([data-smoothstream-theme="default"] ul) {
+  margin-block-start: var(--smoothstream-ul-margin-block-start);
+  margin-block-end: var(--smoothstream-ul-margin-block-end);
+  list-style-type: disc;
+}
+
+:where([data-smoothstream-theme="default"] ol) {
+  margin-block-start: var(--smoothstream-ol-margin-block-start);
+  margin-block-end: var(--smoothstream-ol-margin-block-end);
 }
 
 :where([data-smoothstream-theme="default"] li) {
   padding-inline-start: 0.375em;
-  margin-block: 0.75em;
 }
 
-:where([data-smoothstream-theme="default"] li > p) {
-  margin-block: 0;
+:where([data-smoothstream-theme="default"] ul > li) {
+  margin-block: var(--smoothstream-ul-li-margin-block);
 }
 
-:where([data-smoothstream-theme="default"] li > p + p) {
-  margin-block-start: 0.5em;
+:where([data-smoothstream-theme="default"] ol > li) {
+  margin-block: var(--smoothstream-ol-li-margin-block);
+}
+
+:where([data-smoothstream-theme="default"] :is(ul, ol) > li > p:first-child) {
+  margin-block-start: 0;
 }
 
 :where([data-smoothstream-theme="default"] ol > li)::marker {
   color: var(--smoothstream-counter-color);
+  font-weight: 700;
 }
 
 :where([data-smoothstream-theme="default"] ul > li)::marker {
   color: var(--smoothstream-bullet-color);
 }
 
-:where([data-smoothstream-theme="default"] li > ul),
+:where([data-smoothstream-theme="default"] li > ul) {
+  margin-block: var(--smoothstream-li-ul-margin-block);
+}
+
 :where([data-smoothstream-theme="default"] li > ol) {
-  margin-block: 0.75em;
+  margin-block: var(--smoothstream-li-ol-margin-block);
 }
 
 :where([data-smoothstream-theme="default"] .task-list-item) {
@@ -237,7 +354,7 @@
 }
 
 :where([data-smoothstream-theme="default"] blockquote) {
-  margin-block: 1.6em;
+  margin-block: var(--smoothstream-blockquote-margin-block);
   margin-inline: 0;
   padding-inline-start: 1em;
   border-inline-start: 0.25rem solid var(--smoothstream-quote-border-color);
@@ -255,15 +372,13 @@
 }
 
 :where([data-smoothstream-theme="default"] hr) {
-  margin-block: 3em;
+  margin-block: var(--smoothstream-hr-margin-block);
   border: 0;
   border-block-start: 1px solid var(--smoothstream-border-color);
 }
 
 :where([data-smoothstream-theme="default"] code) {
-  font-family:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-    "Liberation Mono", monospace;
+  font-family: var(--smoothstream-font-mono);
 }
 
 :where([data-smoothstream-theme="default"] code:not(pre code)) {
@@ -271,12 +386,28 @@
   border-radius: 0.3em;
   background: var(--smoothstream-inline-code-background);
   color: var(--smoothstream-inline-code-color);
-  font-size: 0.875em;
+  font-size: var(--smoothstream-inline-code-font-size);
   font-weight: 500;
 }
 
+/*
+ * Adjacent prose would otherwise collapse to the larger paragraph gap.
+ * Headings, rules, tables, and images keep their own margins.
+ */
+:where(
+  [data-smoothstream-theme="default"] :is(p, ul, ol, blockquote):has(+ pre)
+) {
+  margin-block-end: 0;
+}
+
+:where(
+  [data-smoothstream-theme="default"] pre + :is(p, ul, ol, blockquote)
+) {
+  margin-block-start: 0;
+}
+
 :where([data-smoothstream-theme="default"] pre) {
-  margin-block: 1.7em;
+  margin-block: var(--smoothstream-code-margin-block);
   padding: 0.9em 1.15em;
   overflow-x: auto;
   border-radius: 0.75rem;
@@ -331,7 +462,7 @@
   border: 0;
   background: transparent;
   color: inherit;
-  font-size: 0.875em;
+  font-size: var(--smoothstream-code-font-size);
   font-weight: inherit;
   line-height: 1.7;
   tab-size: 2;
@@ -350,8 +481,15 @@
   [data-smoothstream-theme="default"] [data-smoothstream-code-toolbar]
 ) {
   min-height: 1.75rem;
-  padding: 0.55rem 1rem 0;
+  padding: 0.55rem var(--smoothstream-code-padding-inline) 0;
   line-height: 1.5;
+}
+
+:where(
+  [data-smoothstream-theme="default"] [data-smoothstream-code-copy]
+) {
+  /* Pull the larger hit target so the 1rem icon lines up with the inline inset. */
+  margin-inline-end: calc((1rem - 1.75rem) / 2);
 }
 
 :where(
@@ -399,13 +537,13 @@
 :where(
   [data-smoothstream-theme="default"] [data-smoothstream-code-block] > code
 ) {
-  padding: 0.55em 1.15em 0.9em;
+  padding: 0.55em var(--smoothstream-code-padding-inline) 0.9em;
 }
 
 :where(
   [data-smoothstream-theme="default"] [data-smoothstream-table-shell]
 ) {
-  margin-block: 2em;
+  margin-block: var(--smoothstream-table-margin-block);
   border: var(--smoothstream-table-border-width)
     var(--smoothstream-table-border-style)
     var(--smoothstream-table-border-color);
@@ -473,5 +611,13 @@
     img[data-smoothstream-image-standalone]
 ) {
   display: block;
-  margin-block: 2em;
+  margin-block: var(--smoothstream-image-margin-block);
+}
+
+:where([data-smoothstream-theme="default"] > :first-child) {
+  margin-block-start: 0;
+}
+
+:where([data-smoothstream-theme="default"] > :last-child) {
+  margin-block-end: 0;
 }

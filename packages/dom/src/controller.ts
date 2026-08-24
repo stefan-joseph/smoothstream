@@ -15,8 +15,9 @@ import {
 import { renderDom } from "./render";
 import type {
   SmoothstreamController,
-  SmoothstreamMotion,
+  SmoothstreamMode,
   SmoothstreamOptions,
+  SmoothstreamReducedMotion,
   SmoothstreamUpdateOptions,
 } from "./types";
 
@@ -43,7 +44,7 @@ const screenReaderOnlyCss = [
 class DomStreamingController implements SmoothstreamController {
   readonly element: HTMLDivElement;
 
-  readonly #announcer: HTMLDivElement;
+  readonly #announcer: HTMLDivElement | null;
   readonly #clock: Clock;
   readonly #codeHighlighter: CodeHighlighter | undefined;
   readonly #codeHighlights = new Map<number, ResolvedCodeHighlight>();
@@ -54,7 +55,8 @@ class DomStreamingController implements SmoothstreamController {
   readonly #imageLoaders = new Map<string, HTMLImageElement>();
   readonly #imageReadiness = new Map<string, ImageReadiness>();
   readonly #interval: number;
-  readonly #motion: SmoothstreamMotion;
+  readonly #mode: SmoothstreamMode;
+  readonly #reducedMotion: SmoothstreamReducedMotion;
   readonly #reveal: "character" | "word";
   readonly #session: StreamingSession;
   readonly #timeouts = new Set<number>();
@@ -83,7 +85,8 @@ class DomStreamingController implements SmoothstreamController {
     this.#codeHighlighter = options.codeHighlighter;
     this.#duration = options.duration ?? 1_000;
     this.#interval = options.interval ?? 3;
-    this.#motion = options.motion ?? "system";
+    this.#mode = options.mode ?? "streaming";
+    this.#reducedMotion = options.reducedMotion ?? "system";
     this.#reveal = options.reveal ?? "character";
     this.#requestedReceiving = options.receiving ?? false;
     this.#clock = {
@@ -97,29 +100,39 @@ class DomStreamingController implements SmoothstreamController {
     this.element = this.#document.createElement("div");
     if (options.className) this.element.className = options.className;
     this.element.setAttribute("data-smoothstream", "true");
+    this.element.setAttribute("data-smoothstream-mode", this.#mode);
     if (!options.unstyled) {
       this.element.setAttribute("data-smoothstream-theme", "default");
     }
-    this.element.setAttribute("data-smoothstream-motion-policy", this.#motion);
+    this.element.setAttribute(
+      "data-smoothstream-reduced-motion",
+      this.#reducedMotion,
+    );
     this.element.setAttribute("data-smoothstream-reveal", this.#reveal);
     this.element.style.setProperty("--smoothstream-duration", `${this.#duration}ms`);
     this.element.style.setProperty("--smoothstream-interval", `${this.#interval}ms`);
     this.element.addEventListener("click", this.#handleRootClick);
     container.append(this.element);
 
-    this.#announcer = this.#document.createElement("div");
-    this.#announcer.setAttribute("aria-atomic", "true");
-    this.#announcer.setAttribute("aria-live", "polite");
-    this.#announcer.setAttribute("data-smoothstream-announcer", "true");
-    this.#announcer.setAttribute("role", "status");
-    this.#announcer.style.cssText = screenReaderOnlyCss;
-    (this.#document.body ?? this.#document.documentElement).append(this.#announcer);
+    this.#announcer = this.#mode === "streaming"
+      ? this.#document.createElement("div")
+      : null;
+    if (this.#announcer) {
+      this.#announcer.setAttribute("aria-atomic", "true");
+      this.#announcer.setAttribute("aria-live", "polite");
+      this.#announcer.setAttribute("data-smoothstream-announcer", "true");
+      this.#announcer.setAttribute("role", "status");
+      this.#announcer.style.cssText = screenReaderOnlyCss;
+      (this.#document.body ?? this.#document.documentElement).append(
+        this.#announcer,
+      );
+    }
 
-    this.#mediaQuery = this.#motion === "system" && this.#view.matchMedia
+    this.#mediaQuery = this.#reducedMotion === "system" && this.#view.matchMedia
       ? this.#view.matchMedia("(prefers-reduced-motion: reduce)")
       : null;
     this.#motionDisabled =
-      this.#motion === "none" || this.#mediaQuery?.matches === true;
+      this.#reducedMotion === "always" || this.#mediaQuery?.matches === true;
     this.#syncMotionAttributes();
     this.#mediaQuery?.addEventListener("change", this.#handleMotionChange);
 
@@ -148,7 +161,7 @@ class DomStreamingController implements SmoothstreamController {
     };
     if (this.#requestedReceiving || this.#announcedSource !== markdown) {
       this.#announcedSource = null;
-      this.#announcer.textContent = "";
+      if (this.#announcer) this.#announcer.textContent = "";
     }
     if (this.#inputFrame === null) {
       this.#inputFrame = this.#requestFrame(() => {
@@ -175,7 +188,7 @@ class DomStreamingController implements SmoothstreamController {
     this.#codeRequestsByBlock.clear();
     this.#codeSessionsByBlock.clear();
     this.#imageLoaders.clear();
-    this.#announcer.remove();
+    this.#announcer?.remove();
     this.element.remove();
   }
 
@@ -211,6 +224,10 @@ class DomStreamingController implements SmoothstreamController {
     );
   }
 
+  #presentationImmediate(): boolean {
+    return this.#motionDisabled || this.#mode === "static";
+  }
+
   #flushInput(): void {
     const pending = this.#pendingInput;
     this.#pendingInput = null;
@@ -226,7 +243,7 @@ class DomStreamingController implements SmoothstreamController {
     this.#ensureImages(input.images);
     this.#ensureCodeHighlights(input.codeBlocks);
     const units = this.#playbackUnits(input);
-    this.#currentPlayback = this.#motionDisabled
+    this.#currentPlayback = this.#presentationImmediate()
       ? this.#session.immediate(input, units)
       : this.#session.schedule(input, units);
     this.#completionRendered = this.#currentPlayback.animationComplete;
@@ -237,7 +254,7 @@ class DomStreamingController implements SmoothstreamController {
   #ensurePlaybackFrame(): void {
     if (
       this.#destroyed ||
-      this.#motionDisabled ||
+      this.#presentationImmediate() ||
       this.#currentPlayback?.animationComplete !== false ||
       this.#playbackFrame !== null
     ) {
@@ -265,7 +282,7 @@ class DomStreamingController implements SmoothstreamController {
     const playback = this.#currentPlayback;
     if (!input || !playback || this.#destroyed) return;
     const now = this.#clock.now();
-    const currentPlayback = this.#motionDisabled
+    const currentPlayback = this.#presentationImmediate()
       ? playback
       : this.#session.advance(now);
     this.#currentPlayback = currentPlayback;
@@ -292,7 +309,9 @@ class DomStreamingController implements SmoothstreamController {
       this.#announcedSource !== input.source
     ) {
       this.#announcedSource = input.source;
-      this.#announcer.textContent = COMPLETION_ANNOUNCEMENT;
+      if (this.#announcer) {
+        this.#announcer.textContent = COMPLETION_ANNOUNCEMENT;
+      }
     }
   }
 
@@ -359,7 +378,7 @@ class DomStreamingController implements SmoothstreamController {
     const input = this.#currentInput;
     if (!input) return;
     const units = this.#playbackUnits(input);
-    this.#currentPlayback = this.#motionDisabled
+    this.#currentPlayback = this.#presentationImmediate()
       ? this.#session.immediate(input, units)
       : this.#session.schedule(input, units);
     this.#completionRendered = this.#currentPlayback.animationComplete;

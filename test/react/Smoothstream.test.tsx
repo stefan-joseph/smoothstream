@@ -45,7 +45,7 @@ afterEach(() => {
 describe("Smoothstream", () => {
   it("applies the default theme unless an instance opts out", () => {
     const view = render(
-      <Smoothstream motion="none">{"A themed response."}</Smoothstream>,
+      <Smoothstream reducedMotion="always">{"A themed response."}</Smoothstream>,
     );
     const root = view.container.querySelector("[data-smoothstream]");
 
@@ -53,7 +53,7 @@ describe("Smoothstream", () => {
 
     view.rerender(
       <Smoothstream
-        motion="none"
+        reducedMotion="always"
         unstyled
       >
         {"A themed response."}
@@ -62,6 +62,30 @@ describe("Smoothstream", () => {
 
     expect(root).not.toHaveAttribute("data-smoothstream-theme");
     expect(root).toHaveAttribute("data-smoothstream-motion", "none");
+    expect(root).toHaveAttribute("data-smoothstream-mode", "streaming");
+  });
+
+  it("renders static Markdown immediately without disabling interactive motion", () => {
+    const { container } = render(
+      <Smoothstream mode="static" reducedMotion="never">
+        {"A **completed** response."}
+      </Smoothstream>,
+    );
+    const root = container.querySelector("[data-smoothstream]");
+
+    expect(root).toHaveAttribute("data-smoothstream-mode", "static");
+    expect(root).toHaveAttribute("data-smoothstream-motion", "animate");
+    expect(root).toHaveStyle({
+      "--smoothstream-duration": "400ms",
+      "--smoothstream-interval": "5ms",
+    });
+    expect(container.querySelector("p")).toHaveTextContent(
+      "A completed response.",
+    );
+    expect(container.querySelector("strong")).toHaveTextContent("completed");
+    expect(container.querySelector("[data-smoothstream-unit]")).toBeNull();
+    expect(document.body.querySelector("[data-smoothstream-announcer]"))
+      .toBeNull();
   });
 
   it("normalizes HAST properties without the generic JSX conversion pass", () => {
@@ -303,7 +327,7 @@ describe("Smoothstream", () => {
     );
 
     const view = render(
-      <Smoothstream receiving motion="animate">{"unfinished"}</Smoothstream>,
+      <Smoothstream receiving reducedMotion="never">{"unfinished"}</Smoothstream>,
     );
     const announcer = document.body.querySelector(
       "[data-smoothstream-announcer]",
@@ -315,7 +339,7 @@ describe("Smoothstream", () => {
     expect(announcer).toBeEmptyDOMElement();
 
     view.rerender(
-      <Smoothstream receiving={false} motion="animate">{"unfinished"}</Smoothstream>,
+      <Smoothstream receiving={false} reducedMotion="never">{"unfinished"}</Smoothstream>,
     );
     await act(async () => {
       now = 1;
@@ -349,7 +373,7 @@ describe("Smoothstream", () => {
     );
 
     const view = render(
-      <Smoothstream receiving motion="animate">{"Complete.\n\n"}</Smoothstream>,
+      <Smoothstream receiving reducedMotion="never">{"Complete.\n\n"}</Smoothstream>,
     );
     const announcer = document.body.querySelector(
       "[data-smoothstream-announcer]",
@@ -367,7 +391,7 @@ describe("Smoothstream", () => {
     view.rerender(
       <Smoothstream
         receiving={false}
-        motion="animate"
+        reducedMotion="never"
       >
         {"Complete.\n\n"}
       </Smoothstream>,
@@ -691,7 +715,7 @@ describe("Smoothstream", () => {
       "| Smoothstream | $12k |",
     ].join("\n");
     const { container } = render(
-      <Smoothstream motion="animate" reveal="word">{source}</Smoothstream>,
+      <Smoothstream reducedMotion="never" reveal="word">{source}</Smoothstream>,
     );
     await act(async () => {
       now = 1;
@@ -759,7 +783,7 @@ describe("Smoothstream", () => {
     );
 
     const { container } = render(
-      <Smoothstream motion="animate">{source}</Smoothstream>,
+      <Smoothstream reducedMotion="never">{source}</Smoothstream>,
     );
 
     await act(async () => {
@@ -950,7 +974,7 @@ describe("Smoothstream", () => {
     const { container } = render(
       <Smoothstream
         codeHighlighter={codeHighlighter}
-        motion="animate"
+        reducedMotion="never"
       >
         {source}
       </Smoothstream>,
@@ -1082,7 +1106,7 @@ describe("Smoothstream", () => {
       <Smoothstream
         codeHighlighter={codeHighlighter}
         receiving
-        motion="none"
+        reducedMotion="always"
       >
         {`${fence}ts\nfirst();\n`}
       </Smoothstream>,
@@ -1098,7 +1122,7 @@ describe("Smoothstream", () => {
       <Smoothstream
         codeHighlighter={codeHighlighter}
         receiving
-        motion="none"
+        reducedMotion="always"
       >
         {`${fence}ts\nfirst();\nsecond();\n${fence}\n`}
       </Smoothstream>,
@@ -1148,7 +1172,7 @@ describe("Smoothstream", () => {
     const source =
       "![Diagram](/diagram.svg)\n\nLater content keeps revealing.";
     const { container } = render(
-      <Smoothstream duration={400} motion="animate">{source}</Smoothstream>,
+      <Smoothstream duration={400} reducedMotion="never">{source}</Smoothstream>,
     );
     await act(async () => {
       now = 100;
@@ -2022,7 +2046,7 @@ describe("Smoothstream", () => {
     const { container } = render(
       <Smoothstream
         interval={5}
-        motion="animate"
+        reducedMotion="never"
       >
         {"Wideword"}
       </Smoothstream>,
@@ -2057,7 +2081,7 @@ describe("Smoothstream", () => {
     const { container } = render(
       <Smoothstream
         interval={5}
-        motion="animate"
+        reducedMotion="never"
       >
         {"`Wideword`"}
       </Smoothstream>,
@@ -2086,7 +2110,7 @@ describe("Smoothstream", () => {
     const { container } = render(
       <Smoothstream
         interval={5}
-        motion="animate"
+        reducedMotion="never"
         reveal="word"
       >
         {"One two"}

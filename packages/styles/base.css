@@ -64,7 +64,7 @@
   }
 }
 
-[data-smoothstream-motion="animate"] {
+[data-smoothstream-mode="streaming"][data-smoothstream-motion="animate"] {
   font-kerning: none;
 }
 
@@ -199,10 +199,6 @@ pre[data-smoothstream-code-block] > code {
   display: block;
   max-width: 100%;
   overflow-x: auto;
-  font-family:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-    "Liberation Mono", monospace;
-  font-size: 0.875em;
 }
 
 [data-smoothstream-code-icon-swap] {
@@ -277,20 +273,19 @@ pre[data-smoothstream-code-block] > code {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-smoothstream-motion-policy="system"] [data-smoothstream-unit],
-  [data-smoothstream-motion-policy="system"] [data-smoothstream-marker="active"]::marker,
-  [data-smoothstream-motion-policy="system"] [data-smoothstream-task="active"],
-  [data-smoothstream-motion-policy="system"] [data-smoothstream-code-copy],
-  [data-smoothstream-motion-policy="system"] [data-smoothstream-code-icon-swap],
-  [data-smoothstream-motion-policy="system"] [data-smoothstream-code-icon],
-  [data-smoothstream-motion-policy="none"] [data-smoothstream-unit],
-  [data-smoothstream-motion-policy="none"] [data-smoothstream-marker="active"]::marker,
-  [data-smoothstream-motion-policy="none"] [data-smoothstream-task="active"],
-  [data-smoothstream-motion-policy="none"] [data-smoothstream-code-copy],
-  [data-smoothstream-motion-policy="none"] [data-smoothstream-code-icon-swap],
-  [data-smoothstream-motion-policy="none"] [data-smoothstream-code-icon] {
+  [data-smoothstream-reduced-motion="system"] [data-smoothstream-unit],
+  [data-smoothstream-reduced-motion="system"] [data-smoothstream-marker="active"]::marker,
+  [data-smoothstream-reduced-motion="system"] [data-smoothstream-task="active"],
+  [data-smoothstream-reduced-motion="system"] [data-smoothstream-code-copy],
+  [data-smoothstream-reduced-motion="system"] [data-smoothstream-code-icon-swap],
+  [data-smoothstream-reduced-motion="system"] [data-smoothstream-code-icon],
+  [data-smoothstream-reduced-motion="always"] [data-smoothstream-unit],
+  [data-smoothstream-reduced-motion="always"] [data-smoothstream-marker="active"]::marker,
+  [data-smoothstream-reduced-motion="always"] [data-smoothstream-task="active"],
+  [data-smoothstream-reduced-motion="always"] [data-smoothstream-code-copy],
+  [data-smoothstream-reduced-motion="always"] [data-smoothstream-code-icon-swap],
+  [data-smoothstream-reduced-motion="always"] [data-smoothstream-code-icon] {
     animation: none;
     transition: none;
   }
 }
-

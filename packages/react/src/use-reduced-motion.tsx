@@ -3,7 +3,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { SmoothstreamMotion } from "./types";
+import type { SmoothstreamReducedMotion } from "./types";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const subscribeToHydration = (): (() => void) => () => undefined;
@@ -22,7 +22,7 @@ const systemPrefersReducedMotion = (): boolean =>
  * animation back on mid-playback would replay content that is already visible.
  */
 export const useReducedMotion = (
-  motion: SmoothstreamMotion,
+  reducedMotion: SmoothstreamReducedMotion,
 ): ResolvedMotion => {
   const hydrated = useSyncExternalStore(
     subscribeToHydration,
@@ -30,18 +30,18 @@ export const useReducedMotion = (
     unhydratedServerSnapshot,
   );
   const [motionDisabled, setMotionDisabled] = useState(
-    () => motion === "none" || (
-      motion === "system" && systemPrefersReducedMotion()
+    () => reducedMotion === "always" || (
+      reducedMotion === "system" && systemPrefersReducedMotion()
     ),
   );
 
   useEffect(() => {
-    if (motion === "none") {
+    if (reducedMotion === "always") {
       setMotionDisabled(true);
       return;
     }
     if (
-      motion === "animate" ||
+      reducedMotion === "never" ||
       motionDisabled ||
       typeof window.matchMedia !== "function"
     ) {
@@ -67,15 +67,15 @@ export const useReducedMotion = (
 
     query.addListener(handleChange);
     return () => query.removeListener(handleChange);
-  }, [motion, motionDisabled]);
+  }, [motionDisabled, reducedMotion]);
 
-  if (motion === "system" && !hydrated) {
+  if (reducedMotion === "system" && !hydrated) {
     return "pending";
   }
-  if (motion === "none" || motionDisabled) {
+  if (reducedMotion === "always" || motionDisabled) {
     return "none";
   }
-  if (motion === "animate") {
+  if (reducedMotion === "never") {
     return "animate";
   }
   return "animate";

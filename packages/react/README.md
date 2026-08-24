@@ -14,4 +14,13 @@ import { Smoothstream } from "@smoothstream/react";
 </Smoothstream>
 ```
 
+Streaming mode is the default. Render completed content such as previous chat
+messages immediately without disabling interactive motion:
+
+```tsx
+<Smoothstream mode="static">
+  {previousMessage.content}
+</Smoothstream>
+```
+
 Default reveal mechanics and prose styling are loaded automatically.

@@ -43,11 +43,53 @@ afterEach(() => {
 });
 
 describe("Smoothstream SSR hydration", () => {
+  it("server-renders static Markdown before resolving system motion", async () => {
+    vi.stubGlobal("matchMedia", matchMedia(true));
+    const source = "Previously **completed** Markdown.";
+    const serverHtml = renderWithoutWindow(
+      <Smoothstream mode="static" reducedMotion="system">{source}</Smoothstream>,
+    );
+
+    expect(serverHtml).toContain('data-smoothstream-mode="static"');
+    expect(serverHtml).toContain('data-smoothstream-motion="animate"');
+    expect(serverHtml).toContain('data-smoothstream-reduced-motion="system"');
+    expect(serverHtml).toContain("Previously ");
+    expect(serverHtml).toContain("<strong>completed</strong>");
+
+    const container = document.createElement("div");
+    container.innerHTML = serverHtml;
+    document.body.append(container);
+    const recoverableErrors: unknown[] = [];
+    let root: Root | undefined;
+
+    await act(async () => {
+      root = hydrateRoot(
+        container,
+        <Smoothstream mode="static" reducedMotion="system">{source}</Smoothstream>,
+        {
+          onRecoverableError: (error) => recoverableErrors.push(error),
+        },
+      );
+      await Promise.resolve();
+    });
+
+    expect(recoverableErrors.map(String)).toEqual([]);
+    expect(container.querySelector("[data-smoothstream]")).toHaveAttribute(
+      "data-smoothstream-motion",
+      "none",
+    );
+    expect(container.querySelector("strong")).toHaveTextContent("completed");
+    expect(document.body.querySelector("[data-smoothstream-announcer]"))
+      .toBeNull();
+
+    await act(async () => root?.unmount());
+  });
+
   it("resolves a reduced system preference after hydrating an identical shell", async () => {
     vi.stubGlobal("matchMedia", matchMedia(true));
     const source = "Server-provided **Markdown**.";
     const serverHtml = renderWithoutWindow(
-      <Smoothstream motion="system">{source}</Smoothstream>,
+      <Smoothstream reducedMotion="system">{source}</Smoothstream>,
     );
 
     expect(serverHtml).toContain('data-smoothstream-motion="pending"');
@@ -62,7 +104,7 @@ describe("Smoothstream SSR hydration", () => {
     await act(async () => {
       root = hydrateRoot(
         container,
-        <Smoothstream motion="system">{source}</Smoothstream>,
+        <Smoothstream reducedMotion="system">{source}</Smoothstream>,
         {
           onRecoverableError: (error) => recoverableErrors.push(error),
         },
@@ -89,7 +131,7 @@ describe("Smoothstream SSR hydration", () => {
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
     const source = "Animate this response.";
     const serverHtml = renderWithoutWindow(
-      <Smoothstream motion="system">{source}</Smoothstream>,
+      <Smoothstream reducedMotion="system">{source}</Smoothstream>,
     );
 
     expect(serverHtml).toContain('data-smoothstream-motion="pending"');
@@ -104,7 +146,7 @@ describe("Smoothstream SSR hydration", () => {
     await act(async () => {
       root = hydrateRoot(
         container,
-        <Smoothstream motion="system">{source}</Smoothstream>,
+        <Smoothstream reducedMotion="system">{source}</Smoothstream>,
         {
           onRecoverableError: (error) => recoverableErrors.push(error),
         },
@@ -133,7 +175,7 @@ describe("Smoothstream SSR hydration", () => {
       window.clearTimeout(frameId),
     );
     const serverHtml = renderWithoutWindow(
-      <Smoothstream receiving motion="system">{""}</Smoothstream>,
+      <Smoothstream receiving reducedMotion="system">{""}</Smoothstream>,
     );
     const container = document.createElement("div");
     container.innerHTML = serverHtml;
@@ -144,7 +186,7 @@ describe("Smoothstream SSR hydration", () => {
     await act(async () => {
       root = hydrateRoot(
         container,
-        <Smoothstream receiving motion="system">{""}</Smoothstream>,
+        <Smoothstream receiving reducedMotion="system">{""}</Smoothstream>,
         {
           onRecoverableError: (error) => recoverableErrors.push(error),
         },
@@ -161,7 +203,7 @@ describe("Smoothstream SSR hydration", () => {
       root?.render(
         <Smoothstream
           receiving
-          motion="system"
+          reducedMotion="system"
         >
           {"First token arrives.\n\n"}
         </Smoothstream>,
@@ -186,10 +228,11 @@ describe("Smoothstream SSR hydration", () => {
     vi.stubGlobal("matchMedia", matchMedia(false));
     const source = "Immediately **semantic**.";
     const serverHtml = renderWithoutWindow(
-      <Smoothstream motion="none">{source}</Smoothstream>,
+      <Smoothstream reducedMotion="always">{source}</Smoothstream>,
     );
 
     expect(serverHtml).toContain('data-smoothstream-motion="none"');
+    expect(serverHtml).toContain('data-smoothstream-reduced-motion="always"');
     expect(serverHtml).toContain("Immediately ");
     expect(serverHtml).toContain("<strong>semantic</strong>");
 
@@ -202,7 +245,7 @@ describe("Smoothstream SSR hydration", () => {
     await act(async () => {
       root = hydrateRoot(
         container,
-        <Smoothstream motion="none">{source}</Smoothstream>,
+        <Smoothstream reducedMotion="always">{source}</Smoothstream>,
         {
           onRecoverableError: (error) => recoverableErrors.push(error),
         },
@@ -223,10 +266,11 @@ describe("Smoothstream SSR hydration", () => {
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
     const source = "Animate despite the preference.";
     const serverHtml = renderWithoutWindow(
-      <Smoothstream motion="animate">{source}</Smoothstream>,
+      <Smoothstream reducedMotion="never">{source}</Smoothstream>,
     );
 
     expect(serverHtml).toContain('data-smoothstream-motion="animate"');
+    expect(serverHtml).toContain('data-smoothstream-reduced-motion="never"');
     expect(serverHtml).not.toContain("Animate despite");
 
     const container = document.createElement("div");
@@ -238,7 +282,7 @@ describe("Smoothstream SSR hydration", () => {
     await act(async () => {
       root = hydrateRoot(
         container,
-        <Smoothstream motion="animate">{source}</Smoothstream>,
+        <Smoothstream reducedMotion="never">{source}</Smoothstream>,
         {
           onRecoverableError: (error) => recoverableErrors.push(error),
         },
@@ -261,7 +305,7 @@ describe("Smoothstream SSR hydration", () => {
     vi.stubGlobal("matchMedia", matchMedia(true));
     const source = "![Diagram](/diagram.svg)\n\nLater safe content.";
     const serverHtml = renderWithoutWindow(
-      <Smoothstream motion="system">{source}</Smoothstream>,
+      <Smoothstream reducedMotion="system">{source}</Smoothstream>,
     );
 
     expect(serverHtml).not.toContain("<img");
@@ -276,7 +320,7 @@ describe("Smoothstream SSR hydration", () => {
     await act(async () => {
       root = hydrateRoot(
         container,
-        <Smoothstream motion="system">{source}</Smoothstream>,
+        <Smoothstream reducedMotion="system">{source}</Smoothstream>,
         {
           onRecoverableError: (error) => recoverableErrors.push(error),
         },

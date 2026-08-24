@@ -123,7 +123,7 @@ describe("createSmoothstream", () => {
     const container = document.createElement("section");
     document.body.append(container);
     const controller = createSmoothstream(container, {
-      motion: "none",
+      reducedMotion: "always",
     });
     controller.update([
         "# DOM adapter",
@@ -157,6 +157,10 @@ describe("createSmoothstream", () => {
     );
     expect(controller.element.querySelector("code span")).toBeNull();
     expect(controller.element.querySelector("[data-smoothstream-unit]")).toBeNull();
+    expect(controller.element).toHaveAttribute(
+      "data-smoothstream-mode",
+      "streaming",
+    );
     expect(document.querySelector("[data-smoothstream-announcer]")).toHaveTextContent(
       "Content ready.",
     );
@@ -166,13 +170,44 @@ describe("createSmoothstream", () => {
     expect(document.querySelector("[data-smoothstream-announcer]")).toBeNull();
   });
 
+  it("renders static Markdown immediately without disabling interactive motion", () => {
+    const frames = installFrameHarness();
+    const container = document.createElement("section");
+    document.body.append(container);
+    const controller = createSmoothstream(container, {
+      duration: 400,
+      interval: 5,
+      mode: "static",
+      reducedMotion: "never",
+    });
+
+    controller.update("A **completed** response.");
+    frames.flush();
+
+    expect(controller.element).toHaveAttribute("data-smoothstream-mode", "static");
+    expect(controller.element).toHaveAttribute("data-smoothstream-motion", "animate");
+    expect(controller.element.style.getPropertyValue("--smoothstream-duration"))
+      .toBe("400ms");
+    expect(controller.element.style.getPropertyValue("--smoothstream-interval"))
+      .toBe("5ms");
+    expect(controller.element.querySelector("p")).toHaveTextContent(
+      "A completed response.",
+    );
+    expect(controller.element.querySelector("strong")).toHaveTextContent(
+      "completed",
+    );
+    expect(controller.element.querySelector("[data-smoothstream-unit]")).toBeNull();
+    expect(document.querySelector("[data-smoothstream-announcer]")).toBeNull();
+    controller.destroy();
+  });
+
   it("coalesces pending updates and enforces append-only input", () => {
     const frames = installFrameHarness();
     const container = document.createElement("div");
     document.body.append(container);
     const controller = createSmoothstream(container, {
       receiving: true,
-      motion: "none",
+      reducedMotion: "always",
     });
 
     controller.update("First", { receiving: true });
@@ -193,7 +228,7 @@ describe("createSmoothstream", () => {
     const controller = createSmoothstream(container, {
       duration: 100,
       interval: 10,
-      motion: "animate",
+      reducedMotion: "never",
     });
     controller.update("Smooth reveal.");
 
@@ -226,7 +261,7 @@ describe("createSmoothstream", () => {
     const controller = createSmoothstream(container, {
       duration: 100,
       interval: 1,
-      motion: "animate",
+      reducedMotion: "never",
     });
     controller.update("- Parent item\n  - Nested ideas retain their hierarchy.");
 
@@ -253,7 +288,7 @@ describe("createSmoothstream", () => {
     const controller = createSmoothstream(container, {
       duration: 100,
       interval: 5,
-      motion: "animate",
+      reducedMotion: "never",
     });
     controller.update("- Parent text\n  - Nested text continues animating");
 
@@ -309,7 +344,7 @@ describe("createSmoothstream", () => {
     });
     const controller = createSmoothstream(container, {
       codeHighlighter: highlighter,
-      motion: "none",
+      reducedMotion: "always",
     });
     controller.update("```ts\nconst ready = true;\n```");
 
@@ -398,7 +433,7 @@ describe("createSmoothstream", () => {
     const controller = createSmoothstream(container, {
       duration: 100,
       interval: 10,
-      motion: "animate",
+      reducedMotion: "never",
     });
     controller.update([
         "Before table.",
@@ -477,7 +512,7 @@ describe("createSmoothstream", () => {
     const container = document.createElement("div");
     document.body.append(container);
     const controller = createSmoothstream(container, {
-      motion: "none",
+      reducedMotion: "always",
     });
     controller.update("![Diagram](/diagram.svg)\n\nLater content.");
     frames.flush();
