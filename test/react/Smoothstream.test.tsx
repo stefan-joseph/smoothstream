@@ -888,6 +888,39 @@ describe("Smoothstream", () => {
     expect(container.querySelector("code")?.textContent).toBe("ab cd\n");
   });
 
+  it("reveals fenced code nested inside list items", async () => {
+    vi.useFakeTimers();
+    let now = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) =>
+      window.setTimeout(() => callback(now), 16),
+    );
+    vi.stubGlobal("cancelAnimationFrame", (id: number) =>
+      window.clearTimeout(id),
+    );
+
+    const fence = "`".repeat(3);
+    const source = [
+      "1. Outer ordered item.",
+      "",
+      `   ${fence}ts`,
+      "   const nested = true;",
+      `   ${fence}`,
+      "",
+    ].join("\n");
+    const { container } = render(<Smoothstream>{source}</Smoothstream>);
+
+    await act(async () => {
+      now = 1_000;
+      await vi.runAllTimersAsync();
+    });
+
+    expect(container.querySelector("ol li pre code")).toBeInTheDocument();
+    expect(container.querySelector("pre code")?.textContent).toBe(
+      "const nested = true;\n",
+    );
+  });
+
   it("waits for highlighted tokens before revealing a fenced code line", async () => {
     vi.useFakeTimers();
     let now = 0;

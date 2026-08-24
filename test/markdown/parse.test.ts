@@ -528,6 +528,52 @@ describe("createMarkdownPlan", () => {
     ).toBe(false);
   });
 
+  it("plans fenced code, tables, and quotes as blocks inside list items", () => {
+    const fence = "`".repeat(3);
+    const source = [
+      "1. Outer ordered item.",
+      "",
+      `   ${fence}ts`,
+      "   const outerOl = \"level-1\";",
+      `   ${fence}`,
+      "",
+      "   - Nested unordered item.",
+      "",
+      "     | Col | Value |",
+      "     | --- | --- |",
+      "     | nested | table |",
+      "",
+      "     > Quoted nested prose.",
+      "",
+      "     1. Nested ordered item.",
+      "",
+      `        ${fence}ts`,
+      "        const nestedOl = \"level-3\";",
+      `        ${fence}`,
+      "",
+    ].join("\n");
+    const plan = createMarkdownPlan(parseMarkdown(source), source, {
+      inputOpen: false,
+    });
+    const codeLines = plan.units.filter((unit) => unit.kind === "code-line");
+    const tableRows = plan.units.filter((unit) => unit.kind === "table-row");
+
+    expect(codeLines.map((unit) => unit.value)).toEqual([
+      "const outerOl = \"level-1\";",
+      "const nestedOl = \"level-3\";",
+    ]);
+    expect(tableRows.map((unit) => unit.value)).toEqual([
+      "Col\nValue",
+      "nested\ntable",
+    ]);
+    expect(
+      plan.units
+        .filter((unit) => unit.kind === "text")
+        .map((unit) => unit.value)
+        .join(""),
+    ).toContain("Quotednestedprose.");
+  });
+
   it("keeps the prose lead inside a long open ordered-list item", () => {
     const source = `1. ${"flowing ordered item ".repeat(6)}`;
     const plan = createMarkdownPlan(parseMarkdown(source), source, {

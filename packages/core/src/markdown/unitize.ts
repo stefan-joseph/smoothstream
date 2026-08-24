@@ -26,8 +26,25 @@ const HEADING_INTERVALS_AFTER = 6;
 const HORIZONTAL_RULE_DURATION_MULTIPLIER = 3;
 const HORIZONTAL_RULE_INTERVALS_AFTER = 12;
 const LIST_ITEM_INTERVALS_BEFORE = 4;
+const LIST_ITEM_BLOCK_TAGS = new Set([
+  "blockquote",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "hr",
+  "ol",
+  "p",
+  "pre",
+  "table",
+  "ul",
+]);
 
 const isElement = (node: Node): node is Element => node.type === "element";
+const isListItemBlock = (node: Node): node is Element =>
+  isElement(node) && LIST_ITEM_BLOCK_TAGS.has(node.tagName);
 const isParent = (node: Node): node is Parent => "children" in node;
 const isText = (node: Node): node is Text => node.type === "text";
 
@@ -224,7 +241,20 @@ const canOpenUnsettledInlineMarkup = (
   return nextCharacter === undefined || !/^\s$/u.test(nextCharacter);
 };
 
-const hasClosingFence = (value: string): boolean => {
+const openingFenceIndent = (source: string, fenceStart: number): number => {
+  const lineStart = source.lastIndexOf("\n", fenceStart - 1) + 1;
+  return fenceStart - lineStart;
+};
+
+const stripLeadingSpaces = (line: string, count: number): number => {
+  let index = 0;
+  while (index < count && line[index] === " ") {
+    index += 1;
+  }
+  return index;
+};
+
+const hasClosingFence = (value: string, openingIndent = 0): boolean => {
   const lines = value.split(/\r?\n/u);
   const opening = lines[0]?.match(/^ {0,3}(`{3,}|~{3,})/u)?.[1];
   if (!opening) {
@@ -234,7 +264,9 @@ const hasClosingFence = (value: string): boolean => {
   const marker = opening[0];
   const minimumLength = opening.length;
   return lines.slice(1).some((line) => {
-    const candidate = line.match(/^ {0,3}(`+|~+)[\t ]*$/u)?.[1];
+    const candidate = line.slice(stripLeadingSpaces(line, openingIndent)).match(
+      /^ {0,3}(`+|~+)[\t ]*$/u,
+    )?.[1];
     return (
       candidate !== undefined &&
       candidate[0] === marker &&
@@ -275,7 +307,11 @@ const isConfirmedRootBlock = (
   }
 
   const tail = source.slice(range.end);
-  if (hasBlankLine(tail)) {
+  if (
+    hasBlankLine(tail) &&
+    block.tagName !== "ul" &&
+    block.tagName !== "ol"
+  ) {
     return true;
   }
 
@@ -284,7 +320,10 @@ const isConfirmedRootBlock = (
   }
 
   if (block.tagName === "pre") {
-    return hasClosingFence(source.slice(range.start, range.end));
+    return hasClosingFence(
+      source.slice(range.start, range.end),
+      openingFenceIndent(source, range.start),
+    );
   }
 
   return false;
@@ -579,6 +618,7 @@ const collectList = (
   structureConfirmed: boolean,
   contentConfirmed = structureConfirmed,
   inputOpen = false,
+  insideBlockquote = false,
 ): void => {
   const items = collectDirectElements(block, "li");
 
@@ -603,6 +643,7 @@ const collectList = (
       }
 
       const children = item.children;
+      const itemBlocks = children.filter(isListItemBlock);
       const unresolvedChildIndex = referencesStable
         ? -1
         : children.findIndex(
@@ -621,34 +662,39 @@ const collectList = (
         if (!child) {
           continue;
         }
-        const isNestedList =
-          isElement(child) &&
-          (child.tagName === "ul" || child.tagName === "ol");
-        if (isNestedList) {
-          collectList(
+        if (isListItemBlock(child)) {
+          const childConfirmed =
+            itemContentConfirmed ||
+            isConfirmedContainerBlock(
+              child,
+              itemBlocks.indexOf(child),
+              itemBlocks,
+              context.source,
+              inputOpen,
+              insideBlockquote,
+            );
+          collectBlock(
             child,
             context,
-            itemContentConfirmed,
-            itemContentConfirmed,
+            childConfirmed,
             inputOpen,
+            insideBlockquote,
           );
           continue;
         }
 
-        const hasLaterNestedList = children.slice(childIndex + 1).some(
-          (candidate) =>
-            isElement(candidate) &&
-            (candidate.tagName === "ul" || candidate.tagName === "ol"),
+        const hasLaterBlockSibling = children.slice(childIndex + 1).some(
+          isListItemBlock,
         );
         collectFlow(child, {
           blockId,
           planner: context,
-          // A nested list confirms the direct prose that precedes it, even
-          // while the containing final item remains open.
+          // A later block sibling confirms the tight phrasing that precedes
+          // it, even while the containing final item remains open.
           protectUnsettledMarkup:
-            !itemContentConfirmed && !hasLaterNestedList,
+            !itemContentConfirmed && !hasLaterBlockSibling,
           safeEnd:
-            itemContentConfirmed || hasLaterNestedList
+            itemContentConfirmed || hasLaterBlockSibling
               ? Number.POSITIVE_INFINITY
               : Math.max(range.start, context.source.length - FLOW_LOOKAHEAD),
           stopped: false,
@@ -720,6 +766,7 @@ const committedFencedCodeLines = (
   blockStart: number,
   inputOpen: boolean,
   insideBlockquote: boolean,
+  openingIndent = 0,
 ): ReadonlyArray<FencedCodeSourceLine> => {
   const openingLineEnd = blockSource.search(/\r?\n/u);
   if (openingLineEnd === -1) {
@@ -752,7 +799,8 @@ const committedFencedCodeLines = (
       ? blockquotePrefixLength(rawLine)
       : 0;
     const line = rawLine.slice(prefixLength);
-    const closing = line.match(/^ {0,3}(`+|~+)[\t ]*$/u)?.[1];
+    const indentLength = stripLeadingSpaces(line, openingIndent);
+    const closing = line.slice(indentLength).match(/^ {0,3}(`+|~+)[\t ]*$/u)?.[1];
 
     if (
       closing !== undefined &&
@@ -810,6 +858,7 @@ const collectCodeBlock = (
     range.start,
     inputOpen,
     insideBlockquote,
+    openingFenceIndent(context.source, range.start),
   );
 
   committedLines.forEach(({ sourceRange }, lineIndex) => {
@@ -904,7 +953,11 @@ const isConfirmedContainerBlock = (
   }
 
   const tail = source.slice(range.end);
-  if (hasBlankLine(tail)) {
+  if (
+    hasBlankLine(tail) &&
+    block.tagName !== "ul" &&
+    block.tagName !== "ol"
+  ) {
     return true;
   }
 
@@ -918,6 +971,7 @@ const isConfirmedContainerBlock = (
         source.slice(range.start, range.end),
         insideBlockquote,
       ),
+      openingFenceIndent(source, range.start),
     );
   }
 
@@ -950,13 +1004,13 @@ const collectHeading = (
   );
 };
 
-const collectBlock = (
+function collectBlock(
   block: Element,
   context: PlannerContext,
   confirmed: boolean,
   inputOpen: boolean,
   insideBlockquote: boolean,
-): void => {
+): void {
   if (context.referenceBlocked) {
     return;
   }
@@ -989,7 +1043,14 @@ const collectBlock = (
     return;
   }
   if (block.tagName === "ul" || block.tagName === "ol") {
-    collectList(block, context, confirmed, confirmed, inputOpen);
+    collectList(
+      block,
+      context,
+      confirmed,
+      confirmed,
+      inputOpen,
+      insideBlockquote,
+    );
     return;
   }
   if (block.tagName === "table") {
