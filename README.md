@@ -286,7 +286,9 @@ progressively revealed chat content.
 
 The theme is scoped to `[data-smoothstream-theme="default"]`, is intentionally
 unlayered so application resets cannot erase its out-of-the-box presentation,
-and uses zero-specificity `:where()` selectors. Ordinary unlayered application
+and uses zero-specificity `:where()` selectors. It restores `list-style-type`
+on `ul` (`disc`) and `ol` (`decimal`) so resets such as Tailwind Preflight do
+not hide native markers. Ordinary unlayered application
 CSS can therefore override individual elements without `!important`. The
 complete default palette is derived from one foreground token, so changing it
 keeps body text, headings, markers, separators, quotes, and code surfaces in
@@ -368,7 +370,7 @@ expecting it to be a direct child of the Markdown root:
 ```
 
 Inline and fenced `code` use a system monospace stack. Body copy still
-inherits the surrounding application font. The code face and sizes are
+inherits the surrounding application font and size. The code face and sizes are
 tokens; fenced size follows inline size unless you override it:
 
 ```css
@@ -379,9 +381,9 @@ tokens; fenced size follows inline size unless you override it:
 }
 ```
 
-Fenced `pre` vertical margin is `--smoothstream-code-margin-block`. It defaults to `0.75em` (12px at a 16px host). The `pre` inherits the host size, so this follows the selected type size rather than the smaller code face.
+Fenced `pre` vertical margin is `--smoothstream-code-margin-block`. It defaults to `0.75em` (12px when the inherited host size is 16px). The `pre` inherits the host size, so this follows the selected type size rather than the smaller code face.
 
-`h1` type is `1.5em` (24px at a 16px host). Its vertical margins are `--smoothstream-h1-margin-block-start` (`1.5em`, 24px) and `--smoothstream-h1-margin-block-end` (`0.5em`, 8px), measured on the theme host so they do not grow with the heading’s own size. `h2` is `1.25em` (20px) with `--smoothstream-h2-margin-block-start` (`1.5em`, 24px) and `--smoothstream-h2-margin-block-end` (`0.25em`, 4px). `h3` is `1.125em` (18px) with `--smoothstream-h3-margin-block-start` (`1.25em`, 20px) and `--smoothstream-h3-margin-block-end` (`0.25em`, 4px). `h4` is `1em` (16px, weight 600) with `--smoothstream-h4-margin-block-start` / `--smoothstream-h4-margin-block-end` (`1em` / `0.25em`). `h5` and `h6` use the same size and margins with weight 400 (`--smoothstream-h5-margin-block-*`, `--smoothstream-h6-margin-block-*`). Paragraphs use `--smoothstream-p-margin-block-start` (`0.5em`, 8px) and `--smoothstream-p-margin-block-end` (`1em`, 16px). `ul` uses `--smoothstream-ul-margin-block-start` (`0.5em`, 8px) and `--smoothstream-ul-margin-block-end` (`1em`, 16px). `ol` uses `--smoothstream-ol-margin-block-start` / `--smoothstream-ol-margin-block-end` with the same defaults. Unordered list items use `--smoothstream-ul-li-margin-block` (`0.25em`, 4px). Ordered list items use `--smoothstream-ol-li-margin-block` with the same default. Nested lists use `--smoothstream-li-ul-margin-block` and `--smoothstream-li-ol-margin-block` (`0.25em`, 4px). Blockquotes use `--smoothstream-blockquote-margin-block` (`1em`, 16px). In a loose `ul` or `ol` item, the first paragraph has no top margin; later paragraphs keep the paragraph tokens. Horizontal rules use `--smoothstream-hr-margin-block` (`1.75em`, 28px). The table frame’s vertical margin is `--smoothstream-table-margin-block` (`0.5em`, 8px at a 16px host). Standalone images use `--smoothstream-image-margin-block` (`1.5em`, 24px). The first child of the Markdown root has no top margin and the last child has no bottom margin.
+The default theme does not pin a root `rem` size; `em` headings and spacing scale from the surrounding type. Pixel figures below assume a 16px parent. `h1` type is `1.5em` (24px at a 16px host). Its vertical margins are `--smoothstream-h1-margin-block-start` (`1.5em`, 24px) and `--smoothstream-h1-margin-block-end` (`0.5em`, 8px), measured on the theme host so they do not grow with the heading’s own size. `h2` is `1.25em` (20px) with `--smoothstream-h2-margin-block-start` (`1.5em`, 24px) and `--smoothstream-h2-margin-block-end` (`0.25em`, 4px). `h3` is `1.125em` (18px) with `--smoothstream-h3-margin-block-start` (`1.25em`, 20px) and `--smoothstream-h3-margin-block-end` (`0.25em`, 4px). `h4` and `h5` are `1em` (16px, weight 600) with their corresponding `--smoothstream-h4-margin-block-*` and `--smoothstream-h5-margin-block-*` tokens. `h6` uses the same size and margins with weight 400 (`--smoothstream-h6-margin-block-*`). Paragraphs use `--smoothstream-p-margin-block-start` (`0`) and `--smoothstream-p-margin-block-end` (`1em`, 16px), producing the prose-to-prose gap without relying on margin collapsing. When a list, code block, table shell, or blockquote follows a paragraph, the paragraph's trailing margin becomes zero and the supporting block owns the transition. `ul` uses `--smoothstream-ul-margin-block-start` (`0.5em`, 8px) and `--smoothstream-ul-margin-block-end` (`1em`, 16px). `ol` uses `--smoothstream-ol-margin-block-start` / `--smoothstream-ol-margin-block-end` with the same defaults. Unordered list items use `--smoothstream-ul-li-margin-block` (`0.25em`, 4px). Ordered list items use `--smoothstream-ol-li-margin-block` with the same default. Nested lists use `--smoothstream-li-ul-margin-block` and `--smoothstream-li-ol-margin-block` (`0.25em`, 4px). Blockquotes use `--smoothstream-blockquote-margin-block` (`1em`, 16px). The first direct element child of every `ul` or `ol` item has no outer block margin; consecutive paragraph children regain a `1em` top margin. This neutralizes CommonMark's first loose-list wrapper while preserving paragraph spacing inside compound items. Horizontal rules use `--smoothstream-hr-margin-block` (`1.75em`, 28px). The table frame’s vertical margin is `--smoothstream-table-margin-block` (`0.75em`, 12px at a 16px host). Standalone images use `--smoothstream-image-margin-block` (`1.5em`, 24px). The first child of the Markdown root has no top margin and the last child has no bottom margin.
 
 An installed Shiki theme supplies the fenced-code foreground and background.
 Application tokens still take precedence when the surrounding design should

@@ -74,7 +74,7 @@ describe("stylesheet contract", () => {
       ':where([data-smoothstream-theme="default"])',
     );
     expect(css).toMatch(
-      /theme="default"\]\) \{[\s\S]*?line-height: 1\.625;/,
+      /theme="default"\]\) \{[\s\S]*?font-size: inherit;[\s\S]*?line-height: 1\.625;/,
     );
     expect(css).not.toContain(":where([data-smoothstream])");
     expect(css).toContain("--smoothstream-foreground: currentColor");
@@ -97,7 +97,7 @@ describe("stylesheet contract", () => {
     expect(css).toContain("--smoothstream-code-background");
     expect(css).toContain("--smoothstream-code-padding-inline: 1rem");
     expect(css).toContain("--smoothstream-code-margin-block: 0.75em");
-    expect(css).toContain("--smoothstream-p-margin-block-start: 0.5em");
+    expect(css).toContain("--smoothstream-p-margin-block-start: 0");
     expect(css).toContain("--smoothstream-p-margin-block-end: 1em");
     expect(css).toMatch(
       /theme="default"\] p\) \{[\s\S]*?margin-block-start: var\(--smoothstream-p-margin-block-start\);[\s\S]*?margin-block-end: var\(--smoothstream-p-margin-block-end\);/,
@@ -110,7 +110,7 @@ describe("stylesheet contract", () => {
       /theme="default"\] ul\) \{[\s\S]*?margin-block-start: var\(--smoothstream-ul-margin-block-start\);[\s\S]*?margin-block-end: var\(--smoothstream-ul-margin-block-end\);[\s\S]*?list-style-type: disc;/,
     );
     expect(css).toMatch(
-      /theme="default"\] ol\) \{[\s\S]*?margin-block-start: var\(--smoothstream-ol-margin-block-start\);[\s\S]*?margin-block-end: var\(--smoothstream-ol-margin-block-end\);/,
+      /theme="default"\] ol\) \{[\s\S]*?margin-block-start: var\(--smoothstream-ol-margin-block-start\);[\s\S]*?margin-block-end: var\(--smoothstream-ol-margin-block-end\);[\s\S]*?list-style-type: decimal;/,
     );
     expect(css).toContain("--smoothstream-ul-li-margin-block: 0.25em");
     expect(css).toContain("--smoothstream-ol-li-margin-block: 0.25em");
@@ -133,7 +133,10 @@ describe("stylesheet contract", () => {
       /theme="default"\] blockquote\) \{[\s\S]*?margin-block: var\(--smoothstream-blockquote-margin-block\);/,
     );
     expect(css).toMatch(
-      /:is\(ul, ol\) > li > p:first-child\) \{[\s\S]*?margin-block-start: 0;/,
+      /:is\(ul, ol\) > li > :first-child\) \{[\s\S]*?margin-block: 0;/,
+    );
+    expect(css).toMatch(
+      /:is\(ul, ol\) > li > p \+ p\) \{[\s\S]*?margin-block-start: 1em;/,
     );
     expect(css).toContain("--smoothstream-hr-margin-block: 1.75em");
     expect(css).toMatch(
@@ -182,7 +185,7 @@ describe("stylesheet contract", () => {
       /theme="default"\] h4\) \{[\s\S]*?margin-block-start: var\(--smoothstream-h4-margin-block-start\);[\s\S]*?font-size: 1em;/,
     );
     expect(css).toMatch(
-      /theme="default"\] h5\) \{[\s\S]*?font-size: 1em;[\s\S]*?font-weight: 400;/,
+      /theme="default"\] h5\) \{[\s\S]*?font-size: 1em;[\s\S]*?font-weight: 600;/,
     );
     expect(css).toMatch(
       /theme="default"\] h6\) \{[\s\S]*?font-size: 1em;[\s\S]*?font-weight: 400;/,
@@ -205,7 +208,10 @@ describe("stylesheet contract", () => {
       /> :last-child\) \{[\s\S]*?margin-block-end: 0;/,
     );
     expect(css).toMatch(
-      /:is\(p, ul, ol, blockquote\):has\(\+ pre\)[\s\S]*?margin-block-end: 0;/,
+      /p:has\([\s\S]*?\+ :is\([\s\S]*?pre,[\s\S]*?ul,[\s\S]*?ol,[\s\S]*?blockquote,[\s\S]*?\[data-smoothstream-table-shell\][\s\S]*?margin-block-end: 0;/,
+    );
+    expect(css).toMatch(
+      /:is\(ul, ol, blockquote\):has\(\+ pre\)[\s\S]*?margin-block-end: 0;/,
     );
     expect(css).toMatch(
       /pre \+ :is\(p, ul, ol, blockquote\)[\s\S]*?margin-block-start: 0;/,
@@ -258,7 +264,6 @@ describe("stylesheet contract", () => {
     expect(css).toMatch(
       /theme="default"\] li\) \{[\s\S]*?padding-inline-start: 0\.375em;/,
     );
-    expect(css).not.toContain("ol > li > p + p");
     expect(css).toContain('input[type="checkbox"]:checked');
     expect(css).toContain("display: block");
     expect(css).toContain("box-sizing: border-box");
@@ -278,7 +283,7 @@ describe("stylesheet contract", () => {
     expect(css).toContain("--smoothstream-table-border-width");
     expect(css).toContain("--smoothstream-table-border-style");
     expect(css).toContain("--smoothstream-table-border-radius");
-    expect(css).toContain("--smoothstream-table-margin-block: 0.5em");
+    expect(css).toContain("--smoothstream-table-margin-block: 0.75em");
     expect(css).toContain("--smoothstream-image-margin-block: 1.5em");
     expect(css).toMatch(
       /img\[data-smoothstream-image-standalone\][\s\S]*?margin-block: var\(--smoothstream-image-margin-block\);/,

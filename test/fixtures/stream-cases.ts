@@ -16,18 +16,7 @@ const CHUNK_PATTERN = [19, 13, 27, 16, 23, 11, 31, 17] as const;
 const STRESS_CHUNK_PATTERN = [7, 11, 5, 13, 9] as const;
 const BENCHMARK_CHUNK_PATTERN = [7, 13, 5, 19, 11, 23, 9, 17] as const;
 const BENCHMARK_DELAY_PATTERN = [
-  12,
-  8,
-  20,
-  10,
-  34,
-  14,
-  9,
-  48,
-  11,
-  16,
-  72,
-  9,
+  12, 8, 20, 10, 34, 14, 9, 48, 11, 16, 72, 9,
 ] as const;
 
 const chunkMarkdown = (
@@ -68,9 +57,10 @@ const chunkMarkdownWithVariableTiming = (
     const chunkSize = chunkPattern[chunkIndex % chunkPattern.length] ?? 12;
     const nextCursor = Math.min(markdown.length, cursor + chunkSize);
     deliveries.push({
-      delayMs: chunkIndex === 0
-        ? initialDelayMs
-        : delayPattern[(chunkIndex - 1) % delayPattern.length] ?? 16,
+      delayMs:
+        chunkIndex === 0
+          ? initialDelayMs
+          : (delayPattern[(chunkIndex - 1) % delayPattern.length] ?? 16),
       text: markdown.slice(cursor, nextCursor),
     });
     cursor = nextCursor;
@@ -169,6 +159,130 @@ A numbered list is a sequence, not a cluster of bullets. It is short on purpose.
 The paragraph after the numbers should feel like the same body copy as the opening, not like a caption for the list.
 
 The final paragraph is another consecutive block, so the last thing in the answer is still a paragraph stack rather than a single trailing sentence.`;
+
+const mixedBlockSpacing = `# Mixed block spacing
+
+This scenario begins with ordinary prose so the default paragraph rhythm is visible before another kind of block interrupts it.
+
+A second opening paragraph makes that rhythm easy to compare with every transition that follows.
+
+## Lists between paragraphs
+
+This paragraph introduces an unordered list without making the list feel like a separate section.
+
+Another paragraph immediately before it provides a normal paragraph-to-paragraph comparison.
+
+- Keep related items visually grouped.
+- Let nested information sit close to its parent.
+  - This nested item checks the smaller internal rhythm.
+- Return cleanly to the surrounding prose.
+
+This paragraph follows the unordered list and should resume the same readable measure.
+
+A second paragraph follows before the ordered sequence begins.
+
+1. Establish the context.
+2. Present the supporting structure.
+3. Continue with ordinary prose.
+
+This paragraph follows the ordered list and tests the transition back into body copy.
+
+Another paragraph keeps the post-list prose from being a one-off case.
+
+## A table between paragraphs
+
+This paragraph introduces a compact table as supporting information.
+
+The second introductory paragraph gives the table a complete paragraph run above it.
+
+| Element | Intended relationship | Gap character |
+| --- | --- | --- |
+| Paragraphs | Part of one prose run | Comfortable |
+| Supporting blocks | Attached to nearby prose | Compact |
+| Headings | Begin a new section | Deliberate |
+
+This paragraph follows the table and should not look like a table caption.
+
+A second paragraph confirms that ordinary prose spacing resumes below the table.
+
+### Code between paragraphs
+
+This paragraph introduces a code sample that belongs to the surrounding explanation.
+
+Another paragraph before the fence makes the incoming transition unambiguous.
+
+\`\`\`ts
+const spacing = measureBlockRelationships(markdown);
+const stable = spacing.every((gap) => gap.matchesIntent);
+\`\`\`
+
+This paragraph follows the code block and should feel connected without touching its surface.
+
+A second paragraph verifies the normal prose rhythm after the code block.
+
+### A blockquote between paragraphs
+
+This paragraph introduces a quotation as evidence for the surrounding point.
+
+Another paragraph keeps the transition comparable with the list, table, and code examples.
+
+> Good spacing explains which blocks belong together before the reader examines the words.
+>
+> A second quoted paragraph also exercises spacing inside the blockquote itself.
+
+This paragraph follows the quotation and returns the document to its normal voice.
+
+A second paragraph makes the post-quotation relationship visible.
+
+## A final H2 transition
+
+This paragraph sits immediately below an H2 so its smaller outgoing heading gap can be reviewed.
+
+A second paragraph restores the standard body-copy interval.
+
+A third paragraph completes the final prose run before the last lower-level heading.
+
+### A final H3 transition
+
+This paragraph sits immediately below an H3 for a direct comparison with the H2 above.
+
+The final paragraph closes the scenario with an ordinary paragraph-to-paragraph transition.`;
+
+const headingParagraphSpacing = `# H1: Primary document heading
+
+The first paragraph establishes the opening relationship beneath the largest heading.
+
+A second paragraph shows the ordinary prose interval before the document moves to H2.
+
+## H2: Major section heading
+
+This section intentionally contains one paragraph so the next heading follows a short body section.
+
+### H3: Supporting section heading
+
+The first paragraph under H3 begins a longer three-paragraph run.
+
+The middle paragraph makes the repeated body spacing visible without another block interrupting it.
+
+The third paragraph closes the longest run in this scenario before H4 appears.
+
+#### H4: Detailed section heading
+
+This first paragraph checks the smaller heading against ordinary body copy.
+
+A second paragraph completes the two-paragraph H4 section.
+
+##### H5: Minor section heading
+
+This is the only paragraph beneath H5, keeping this section intentionally compact.
+
+###### H6: Smallest section heading
+
+The first paragraph beneath H6 confirms that it still reads as a heading rather than bold body text.
+
+The second paragraph verifies the normal prose interval at the smallest heading level.
+
+A third and final paragraph ends the scenario with a longer run beneath H6.`;
 
 const delimiterRegression = `# Delimiter containment
 
@@ -437,7 +551,7 @@ const nestedListBlocks = [
   "   ### Outer heading",
   "",
   "   ```ts",
-  "   const outerOl = \"level-1\";",
+  '   const outerOl = "level-1";',
   "   ```",
   "",
   "   | Place | Kind |",
@@ -453,7 +567,7 @@ const nestedListBlocks = [
   "     #### Nested heading",
   "",
   "     ```ts",
-  "     const nestedUl = \"level-2\";",
+  '     const nestedUl = "level-2";',
   "     ```",
   "",
   "     | Place | Kind |",
@@ -469,7 +583,7 @@ const nestedListBlocks = [
   "        ##### Inner heading",
   "",
   "        ```ts",
-  "        const nestedOl = \"level-3\";",
+  '        const nestedOl = "level-3";',
   "        ```",
   "",
   "        | Place | Kind |",
@@ -491,6 +605,44 @@ const markerMotion = `# Native marker motion
 - Bullets fade into place without replacing \`::marker\`.
 - A second item makes the repeated motion easier to compare.
   - Nested bullets use the same entrance.`;
+
+const completeSnapshotListShells = `Here are the main improvements I'd suggest for \`getting-started/how-radiant-docs-works.mdx\`:
+
+- **Tighten the opening framing.**
+  The page currently explains the model well, but it could more directly tell readers why they should read it. A short first paragraph would make the purpose clearer.
+
+- **Make the relationship to nearby pages more explicit.**
+  This page overlaps with the workflow and content-model pages. Consider clarifying the distinction:
+
+  - this page explains the mental model
+  - workflows explain how to edit in practice
+  - the content model explains what files exist
+
+- **Add a short “when to use this page” line.**
+  Since this is a concept page, a one-sentence orienting paragraph near the top would help readers know whether they need this page or should jump straight to a how-to.
+
+- **Consider defining “docs source” more precisely.**
+  The phrase is useful, but a reader may wonder whether it means repository files, dashboard state, or published output. A small clarification would reduce ambiguity.
+
+- **Break up the “product model” table if you want more scanability.**
+  The table is good, but the last two rows are more process-oriented than the first two. You could either:
+
+  - keep the table and make each row more parallel
+  - split it into “Content,” “Authoring,” and “Delivery” sections
+
+- **Make the assistant explanation a little more concrete.**
+  The “Docs as an answer surface” section is strong, but it would be better if it explicitly said what the assistant uses:
+
+  - published docs
+  - approved context sources
+  - citations back to source pages
+
+- **Strengthen the “next steps” section with more outcome-based labels.**
+  The cards are fine, but the link descriptions could be a little more task-oriented:
+
+  - Workflows: choose an editing path
+  - Content model: understand file structure
+  - Knowledge Assistant: see how answers are generated`;
 
 const pausedTaskList: ReadonlyArray<StreamDelivery> = [
   {
@@ -670,9 +822,8 @@ const benchmarkDeliveries: ReadonlyArray<StreamDelivery> = [
   { delayMs: 250, text: benchmarkMarkdown },
 ];
 
-const liveBenchmarkDeliveries = chunkMarkdownWithVariableTiming(
-  benchmarkMarkdown,
-);
+const liveBenchmarkDeliveries =
+  chunkMarkdownWithVariableTiming(benchmarkMarkdown);
 
 const stressSections = Array.from({ length: 6 }, (_, index) => {
   const section = String(index + 1).padStart(2, "0");
@@ -729,6 +880,16 @@ export const streamCases: ReadonlyArray<StreamCase> = [
     id: "prose-with-lists",
     label: "Prose: paragraphs and lists",
     deliveries: chunkMarkdown(proseWithLists),
+  },
+  {
+    id: "spacing-mixed-blocks",
+    label: "Spacing: mixed blocks",
+    deliveries: chunkMarkdown(mixedBlockSpacing),
+  },
+  {
+    id: "spacing-heading-levels",
+    label: "Spacing: H1–H6 headings",
+    deliveries: chunkMarkdown(headingParagraphSpacing),
   },
   {
     id: "stress-fast-long-response",
@@ -869,6 +1030,11 @@ export const streamCases: ReadonlyArray<StreamCase> = [
     id: "list-marker-motion",
     label: "List: marker motion",
     deliveries: chunkMarkdown(markerMotion),
+  },
+  {
+    id: "list-complete-snapshot-shells",
+    label: "List: complete-snapshot shells",
+    deliveries: [{ delayMs: 250, text: completeSnapshotListShells }],
   },
   {
     id: "list-task-items",
