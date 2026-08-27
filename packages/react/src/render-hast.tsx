@@ -55,10 +55,12 @@ const INLINE_GROUP_TAGS = new Set(["a", "code", "del", "em", "strong"]);
 
 interface RenderState {
   cache: HastRenderCache;
+  codeHighlighterEnabled: boolean;
   codeHighlights: ReadonlyMap<number, ResolvedCodeHighlight>;
   compactedBlockIds: ReadonlySet<string> | undefined;
   compactedUnitIds: CompactedUnitLookup;
   images: ReadonlyMap<string, ImageReadiness>;
+  immediate: boolean;
   now: number;
   reveal: MarkdownReveal;
   schedules: ReadonlyMap<string, ScheduledUnit>;
@@ -179,6 +181,8 @@ const EnhancedCodeBlock = ({
     }
   };
 
+  const copyLabel = label ? `Copy ${label} code` : "Copy code";
+
   return jsxs("pre", {
     ...properties,
     "data-smoothstream-code-block": true,
@@ -192,7 +196,7 @@ const EnhancedCodeBlock = ({
           }),
           jsx("button", {
             "aria-hidden": copyReady ? undefined : true,
-            "aria-label": copied ? "Code copied" : `Copy ${label} code`,
+            "aria-label": copied ? "Code copied" : copyLabel,
             "data-smoothstream-code-copy": true,
             "data-smoothstream-ready": copyReady,
             disabled: !copyReady,
@@ -879,6 +883,10 @@ const inlineContentIsSettled = (
   state: RenderState,
   fallbackSchedule: ScheduledUnit,
 ): boolean => {
+  if (state.immediate) {
+    return true;
+  }
+
   let foundScheduledContent = false;
   let settled = true;
   const visit = (child: ElementContent): void => {
@@ -959,18 +967,18 @@ const codePaletteProperties = (
         palette.color ||
         (palette.style && Object.keys(palette.style).length > 0)),
   );
-  if (!languageLabel && !hasPalettePresentation) {
+  if (
+    !state.codeHighlighterEnabled &&
+    !languageLabel &&
+    !hasPalettePresentation
+  ) {
     return {};
   }
 
   return {
-    ...(languageLabel
-      ? {
-          "data-smoothstream-code-copy-ready": blockStart !== undefined &&
-            state.compactedBlockIds?.has(`block:${blockStart}`) === true,
-          "data-smoothstream-code-label": languageLabel,
-        }
-      : {}),
+    "data-smoothstream-code-copy-ready": blockStart !== undefined &&
+      state.compactedBlockIds?.has(`block:${blockStart}`) === true,
+    "data-smoothstream-code-label": languageLabel ?? "",
     ...(hasPalettePresentation && palette
       ? {
           "data-smoothstream-code-theme": true,
@@ -1062,6 +1070,13 @@ const transformImage = (
         "data-smoothstream-image-standalone": true,
       }
     : node.properties;
+  if (state.immediate) {
+    return [{
+      ...node,
+      properties: imageProperties,
+    }];
+  }
+
   const readiness = state.images.get(schedule.id);
   if (!readiness) {
     if (!isVisible(schedule, state.now)) {
@@ -1281,7 +1296,11 @@ const transformNode = (
     const childSchedule = childRange
       ? state.schedules.get(createRangeUnitId("image", childRange))
       : undefined;
-    if (childSchedule && !state.images.has(childSchedule.id)) {
+    if (
+      !state.immediate &&
+      childSchedule &&
+      !state.images.has(childSchedule.id)
+    ) {
       break;
     }
   }
@@ -1496,7 +1515,7 @@ const hastNodeToReact = (
       typeof node.properties["data-smoothstream-code-label"] === "string"
     ? node.properties["data-smoothstream-code-label"]
     : undefined;
-  if (!label) {
+  if (label === undefined) {
     return element;
   }
 
@@ -1738,10 +1757,12 @@ const blockRenderRevision = (
 
 interface HastBlockProps {
   readonly cache: HastRenderCache;
+  readonly codeHighlighterEnabled: boolean;
   readonly codeHighlights: ReadonlyMap<number, ResolvedCodeHighlight>;
   readonly compactedBlockIds: ReadonlySet<string> | undefined;
   readonly compactedUnitIds: CompactedUnitLookup;
   readonly images: ReadonlyMap<string, ImageReadiness>;
+  readonly immediate: boolean;
   readonly node: RootContent;
   readonly now: number;
   readonly reveal: MarkdownReveal;
@@ -1751,10 +1772,12 @@ interface HastBlockProps {
 
 const HastBlock = ({
   cache,
+  codeHighlighterEnabled,
   codeHighlights,
   compactedBlockIds,
   compactedUnitIds,
   images,
+  immediate,
   node,
   now,
   reveal,
@@ -1764,10 +1787,12 @@ const HastBlock = ({
     type: "root",
     children: transformRootNode(node, {
       cache,
+      codeHighlighterEnabled,
       codeHighlights,
       compactedBlockIds,
       compactedUnitIds,
       images,
+      immediate,
       now,
       reveal,
       schedules,
@@ -1794,16 +1819,20 @@ export const renderHast = (
   codeHighlights: ReadonlyMap<number, ResolvedCodeHighlight> = new Map(),
   codeHighlightRevision = 0,
   reveal: MarkdownReveal = "character",
+  immediate = false,
+  codeHighlighterEnabled = false,
 ): ReactNode => {
   const blocks = prepareRenderBlocks(tree, units, cache);
   const timings = prepareBlockTimings(tree, blocks, schedules, cache);
   return blocks.map((block) =>
     createElement(MemoizedHastBlock, {
       cache,
+      codeHighlighterEnabled,
       codeHighlights,
       compactedBlockIds,
       compactedUnitIds,
       images,
+      immediate,
       key: block.key,
       node: block.node,
       now,
@@ -1818,7 +1847,7 @@ export const renderHast = (
         images,
         visibleUnitCount,
         codeHighlightRevision,
-      ) + `|${reveal}`,
+      ) + `|${reveal}|${immediate}|${codeHighlighterEnabled}`,
       schedules,
     })
   );

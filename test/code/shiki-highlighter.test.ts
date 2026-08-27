@@ -30,6 +30,63 @@ describe("Shiki code highlighter", () => {
     expect(second.palette).toEqual(first.palette);
   });
 
+  it("loads explicitly fenced languages discovered inside another language", async () => {
+    const highlighter = createCodeHighlighter();
+    const session = {};
+
+    await highlighter.highlight({
+      code: "# An MDX guide\n\n",
+      language: "mdx",
+      session,
+    });
+    const result = await highlighter.highlight({
+      code: [
+        "# An MDX guide",
+        "",
+        "Use a fenced example inside the guide:",
+        "",
+        "```python",
+        "def greet(name: str) -> str:",
+        "    return f\"Hello, {name}!\"",
+        "```",
+        "",
+      ].join("\n"),
+      language: "mdx",
+      session,
+    });
+
+    const embeddedLine = result.lines[5];
+    expect(embeddedLine?.tokens.map((token) => token.content).join(""))
+      .toBe("def greet(name: str) -> str:");
+    expect(new Set(embeddedLine?.tokens.map((token) => token.style?.color)).size)
+      .toBeGreaterThan(1);
+  });
+
+  it("loads intrinsic companion grammars on a fresh highlighter", async () => {
+    const mdx = await createCodeHighlighter().highlight({
+      code: [
+        '<Accordion title="What is MDX?">',
+        "  {answer}",
+        "</Accordion>",
+        "",
+      ].join("\n"),
+      language: "mdx",
+      session: {},
+    });
+    const haml = await createCodeHighlighter().highlight({
+      code: "%p= user.name\n",
+      language: "haml",
+      session: {},
+    });
+
+    expect(mdx.lines[0]?.tokens.find((token) =>
+      token.content === "Accordion"
+    )?.style?.color).toBeTruthy();
+    expect(haml.lines[0]?.tokens.find((token) =>
+      token.content === "name"
+    )?.style?.color).toBeTruthy();
+  });
+
   it("recognizes Shiki aliases and leaves unknown languages unhighlighted", async () => {
     const highlighter = createCodeHighlighter();
 

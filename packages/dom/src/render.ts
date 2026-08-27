@@ -41,10 +41,12 @@ interface ElementSpec {
 type DomSpec = ElementSpec | TextSpec;
 
 export interface DomRenderState {
+  readonly codeHighlighterEnabled: boolean;
   readonly codeHighlights: ReadonlyMap<number, ResolvedCodeHighlight>;
   readonly compactedBlockIds: ReadonlySet<string>;
   readonly compactedUnitIds: ReadonlySet<string>;
   readonly images: ReadonlyMap<string, ImageReadiness>;
+  readonly immediate: boolean;
   readonly now: number;
   readonly reveal: MarkdownReveal;
   readonly schedules: ReadonlyMap<string, ScheduledUnit>;
@@ -472,18 +474,18 @@ const codeBlockProperties = (
       : {}),
   };
 
-  if (!languageLabel && Object.keys(paletteStyle).length === 0) {
+  if (
+    !state.codeHighlighterEnabled &&
+    !languageLabel &&
+    Object.keys(paletteStyle).length === 0
+  ) {
     return properties;
   }
   return {
     ...properties,
-    ...(languageLabel
-      ? {
-          "data-smoothstream-code-copy-ready": blockStart !== undefined &&
-            state.compactedBlockIds.has(`block:${blockStart}`),
-          "data-smoothstream-code-label": languageLabel,
-        }
-      : {}),
+    "data-smoothstream-code-copy-ready": blockStart !== undefined &&
+      state.compactedBlockIds.has(`block:${blockStart}`),
+    "data-smoothstream-code-label": languageLabel ?? "",
     ...(Object.keys(paletteStyle).length > 0
       ? {
           "data-smoothstream-code-theme": true,
@@ -545,6 +547,7 @@ const enhancedCodeBlock = (
   copyReady: boolean,
 ): ElementSpec => {
   const key = `${rendered.key}:enhanced`;
+  const copyLabel = label ? `Copy ${label} code` : "Copy code";
   return elementSpec(
     rendered.key,
     "pre",
@@ -562,14 +565,14 @@ const enhancedCodeBlock = (
             `${key}:language`,
             "span",
             { "data-smoothstream-code-language": true },
-            [textSpec(`${key}:language:text`, label)],
+            label ? [textSpec(`${key}:language:text`, label)] : [],
           ),
           elementSpec(
             `${key}:copy`,
             "button",
             {
               "aria-hidden": copyReady ? undefined : true,
-              "aria-label": `Copy ${label} code`,
+              "aria-label": copyLabel,
               "data-smoothstream-code-copy": true,
               "data-smoothstream-ready": copyReady,
               disabled: !copyReady,
@@ -633,8 +636,12 @@ const transformImage = (
   const properties: Record<string, unknown> = {
     ...node.properties,
     ...(standalone ? { "data-smoothstream-image-standalone": true } : {}),
-    decoding: "async",
   };
+  if (state.immediate) {
+    return [elementSpec(nodeKey(node, path), "img", properties, [])];
+  }
+
+  properties.decoding = "async";
   const readiness = state.images.get(schedule.id);
   if (!readiness) {
     if (!isVisible(schedule, state.now)) return [];

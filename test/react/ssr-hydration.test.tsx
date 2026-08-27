@@ -5,6 +5,10 @@ import type { ReactElement } from "react";
 import { hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type {
+  CodeHighlighter,
+  CodeHighlightResult,
+} from "@smoothstream/core";
 import { Smoothstream } from "../../packages/react/src/Smoothstream";
 
 const renderWithoutWindow = (element: ReactElement): string => {
@@ -81,6 +85,138 @@ describe("Smoothstream SSR hydration", () => {
     expect(container.querySelector("strong")).toHaveTextContent("completed");
     expect(document.body.querySelector("[data-smoothstream-announcer]"))
       .toBeNull();
+
+    await act(async () => root?.unmount());
+  });
+
+  it("server-renders complete static resources before client enhancement", async () => {
+    let resolveHighlight: ((result: CodeHighlightResult) => void) | undefined;
+    const highlight = vi.fn(
+      () => new Promise<CodeHighlightResult>((resolve) => {
+        resolveHighlight = resolve;
+      }),
+    );
+    const highlighter: CodeHighlighter = {
+      highlight,
+      name: "pending-ssr-highlighter",
+    };
+    const source = [
+      "Before the code.",
+      "",
+      "```ts",
+      "const ready = true;",
+      "```",
+      "",
+      "![Diagram](/diagram.svg)",
+      "",
+      "After the resources.",
+    ].join("\n");
+    const element = (
+      <Smoothstream
+        codeHighlighter={highlighter}
+        mode="static"
+        reducedMotion="never"
+      >
+        {source}
+      </Smoothstream>
+    );
+    const serverHtml = renderWithoutWindow(element);
+
+    expect(highlight).not.toHaveBeenCalled();
+    expect(serverHtml).toContain("Before the code.");
+    expect(serverHtml).toContain("const ready = true;");
+    expect(serverHtml).toContain("After the resources.");
+
+    const container = document.createElement("div");
+    container.innerHTML = serverHtml;
+    document.body.append(container);
+    const serverImage = container.querySelector("img");
+    expect(serverImage).toHaveAttribute("src", "/diagram.svg");
+    expect(serverImage).toHaveAttribute("alt", "Diagram");
+    expect(serverImage).not.toHaveAttribute("aria-hidden");
+    expect(serverImage).not.toHaveAttribute("data-smoothstream-image");
+    expect(container.querySelector("pre code")?.textContent).toBe(
+      "const ready = true;\n",
+    );
+    expect(container.querySelector("[data-smoothstream-code-token]"))
+      .toBeNull();
+    const serverPre = container.querySelector(
+      "pre[data-smoothstream-code-block]",
+    );
+    const serverToolbar = serverPre?.querySelector(
+      "[data-smoothstream-code-toolbar]",
+    );
+    const serverLanguage = serverPre?.querySelector(
+      "[data-smoothstream-code-language]",
+    );
+    const serverCopyButton = serverPre?.querySelector<HTMLButtonElement>(
+      "button[data-smoothstream-code-copy]",
+    );
+    expect(serverPre).not.toBeNull();
+    expect(serverToolbar?.parentElement).toBe(serverPre);
+    expect(serverLanguage).toBeEmptyDOMElement();
+    expect(serverCopyButton).toBeEnabled();
+    expect(serverCopyButton).toHaveAccessibleName("Copy code");
+
+    const recoverableErrors: unknown[] = [];
+    let root: Root | undefined;
+    await act(async () => {
+      root = hydrateRoot(container, element, {
+        onRecoverableError: (error) => recoverableErrors.push(error),
+      });
+      await Promise.resolve();
+    });
+
+    expect(recoverableErrors.map(String)).toEqual([]);
+    expect(highlight).toHaveBeenCalledOnce();
+    expect(container.querySelector("pre code")?.textContent).toBe(
+      "const ready = true;\n",
+    );
+    expect(container.querySelector("pre[data-smoothstream-code-block]"))
+      .toBe(serverPre);
+    expect(container.querySelector("[data-smoothstream-code-toolbar]"))
+      .toBe(serverToolbar);
+    expect(container.querySelector("[data-smoothstream-code-copy]"))
+      .toBe(serverCopyButton);
+    expect(container).toHaveTextContent("After the resources.");
+    expect(container.querySelector("img")).not.toHaveAttribute("aria-hidden");
+
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    await act(async () => {
+      serverCopyButton?.click();
+      await Promise.resolve();
+    });
+    expect(writeText).toHaveBeenCalledWith("const ready = true;");
+
+    await act(async () => {
+      resolveHighlight?.({
+        languageLabel: "TypeScript",
+        lines: [{
+          tokens: [
+            { content: "const", style: { color: "#0000ff" } },
+            { content: " ready = true;" },
+          ],
+        }],
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector("[data-smoothstream-code-token]"))
+      .toHaveStyle({ color: "rgb(0, 0, 255)" });
+    expect(container.querySelector("pre[data-smoothstream-code-block]"))
+      .toBe(serverPre);
+    expect(container.querySelector("[data-smoothstream-code-toolbar]"))
+      .toBe(serverToolbar);
+    expect(container.querySelector("[data-smoothstream-code-copy]"))
+      .toBe(serverCopyButton);
+    expect(serverLanguage).toHaveTextContent("TypeScript");
+    expect(container.querySelector("pre code")).toHaveTextContent(
+      "const ready = true;",
+    );
+    expect(container).toHaveTextContent("After the resources.");
+    expect(container.querySelector("img")).not.toHaveAttribute("aria-hidden");
 
     await act(async () => root?.unmount());
   });
@@ -301,7 +437,7 @@ describe("Smoothstream SSR hydration", () => {
     await act(async () => root?.unmount());
   });
 
-  it("mounts a pending image only after system motion resolves", async () => {
+  it("renders resources immediately after resolving reduced system motion", async () => {
     vi.stubGlobal("matchMedia", matchMedia(true));
     const source = "![Diagram](/diagram.svg)\n\nLater safe content.";
     const serverHtml = renderWithoutWindow(
@@ -329,11 +465,18 @@ describe("Smoothstream SSR hydration", () => {
     });
 
     expect(recoverableErrors.map(String)).toEqual([]);
-    expect(container.querySelector("img")).toHaveAttribute(
-      "data-smoothstream-image",
-      "pending",
+    expect(container.querySelector("[data-smoothstream]")).toHaveAttribute(
+      "data-smoothstream-motion",
+      "none",
     );
-    expect(container.querySelector("img")).toHaveAttribute("aria-hidden", "true");
+    expect(container.querySelector("img")).toHaveAttribute(
+      "src",
+      "/diagram.svg",
+    );
+    expect(container.querySelector("img")).not.toHaveAttribute(
+      "data-smoothstream-image",
+    );
+    expect(container.querySelector("img")).not.toHaveAttribute("aria-hidden");
     expect(container).toHaveTextContent("Later safe content.");
 
     await act(async () => root?.unmount());

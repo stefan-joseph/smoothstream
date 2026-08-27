@@ -23,4 +23,17 @@ messages immediately without disabling interactive motion:
 </Smoothstream>
 ```
 
+A mounted streaming component represents one append-only response. Keep it in
+streaming mode when input closes so queued presentation can finish naturally:
+
+```tsx
+<Smoothstream receiving={receiving}>
+  {activeResponse.content}
+</Smoothstream>
+```
+
+Set `receiving` to `false` when no more Markdown will arrive. Use static mode
+when mounting content that was already complete, and give a different response
+a new React `key`.
+
 Default reveal mechanics and prose styling are loaded automatically.

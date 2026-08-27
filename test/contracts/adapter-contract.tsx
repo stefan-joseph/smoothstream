@@ -1,4 +1,7 @@
-import type { CodeHighlighter } from "@smoothstream/core";
+import type {
+  CodeHighlighter,
+  CodeHighlightResult,
+} from "@smoothstream/core";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
 import { Fragment } from "react";
 import { jsx, jsxs } from "react/jsx-runtime";
@@ -219,6 +222,91 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
       }
     });
 
+    it.each([
+      {
+        name: "static mode",
+        options: { mode: "static", reducedMotion: "never" },
+      },
+      {
+        name: "reduced motion",
+        options: { reducedMotion: "always" },
+      },
+    ] as const)(
+      "renders unresolved resources immediately with $name",
+      async ({ options }) => {
+        class UnexpectedImageLoader {
+          static readonly instances: UnexpectedImageLoader[] = [];
+
+          constructor() {
+            UnexpectedImageLoader.instances.push(this);
+          }
+        }
+        vi.stubGlobal("Image", UnexpectedImageLoader);
+        const highlight = vi.fn(
+          () => new Promise<CodeHighlightResult>(() => undefined),
+        );
+        const source = [
+          "Before the code.",
+          "",
+          "```ts",
+          "const ready = true;",
+          "```",
+          "",
+          "![Diagram](/diagram.svg)",
+          "",
+          "After the resources.",
+        ].join("\n");
+        const driver = await mount(source, {
+          ...options,
+          codeHighlighter: {
+            highlight,
+            name: "pending-contract-highlighter",
+          },
+        });
+
+        try {
+          expect(highlight).toHaveBeenCalledOnce();
+          expect(driver.element).toHaveTextContent("Before the code.");
+          expect(driver.element.querySelector("pre code")).toHaveTextContent(
+            "const ready = true;",
+          );
+          const pre = driver.element.querySelector(
+            "pre[data-smoothstream-code-block]",
+          );
+          const toolbar = pre?.querySelector(
+            "[data-smoothstream-code-toolbar]",
+          );
+          const language = pre?.querySelector(
+            "[data-smoothstream-code-language]",
+          );
+          const copyButton = pre?.querySelector(
+            "button[data-smoothstream-code-copy]",
+          );
+          expect(pre).not.toBeNull();
+          expect(toolbar?.parentElement).toBe(pre);
+          expect(language).toBeEmptyDOMElement();
+          expect(copyButton).toBeEnabled();
+          expect(copyButton).toHaveAttribute("data-smoothstream-ready", "true");
+          expect(copyButton).toHaveAccessibleName("Copy code");
+          expect(copyButton).not.toHaveAttribute("aria-hidden");
+          expect(driver.element).toHaveTextContent("After the resources.");
+          expect(driver.element.querySelector("[data-smoothstream-code-token]"))
+            .toBeNull();
+          const image = driver.element.querySelector("img");
+          expect(image).toHaveAttribute("src", "/diagram.svg");
+          expect(image).toHaveAttribute("alt", "Diagram");
+          expect(image).not.toHaveAttribute("aria-hidden");
+          expect(image).not.toHaveAttribute("data-smoothstream-image");
+          expect(image).not.toHaveStyle({ visibility: "hidden" });
+          expect(UnexpectedImageLoader.instances).toHaveLength(0);
+          expect(driver.element.querySelector("[data-smoothstream-unit]"))
+            .toBeNull();
+        } finally {
+          driver.destroy();
+        }
+      },
+    );
+
     it("announces a completed streaming response and removes its announcer", async () => {
       const source = "A completed response.";
       const driver = await mount(source, {
@@ -276,7 +364,9 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
       vi.stubGlobal("Image", ControlledImage);
 
       const driver = await mount("![Diagram](/diagram.svg)\n\nLater content.", {
-        reducedMotion: "always",
+        duration: 0,
+        interval: 0,
+        reducedMotion: "never",
       });
       try {
         const pendingImage = driver.element.querySelector("img");

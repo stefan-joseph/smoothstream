@@ -107,8 +107,15 @@ The integration stays small:
 
 ## Code arrives with context
 
-\`\`\`tsx
-renderer.update(message.content, { receiving });
+\`\`\`mdx
+<AccordionGroup>
+  <Accordion title="What is MDX?">
+    MDX is a markdown language that allows you to use JSX components within markdown files.
+  </Accordion>
+  <Accordion title="Why use Accordions?">
+    Accordions help organize content, making it easier for users to find information without overwhelming them.
+  </Accordion>
+</AccordionGroup>
 \`\`\`
 
 The renderer needs the Markdown accumulated so far. Smoothstream handles the buffering, parsing, scheduling, and transition choreography internally.`;
@@ -423,6 +430,21 @@ npm run demo
 reveal = "stable"
 lookahead = true
 \`\`\``;
+
+const embeddedCodeLanguages = `# Embedded language discovery
+
+This is one MDX code block containing a Python fence. Only MDX is declared on the outer block; the code extension discovers and lazily loads Python from the inner fence.
+
+\`\`\`\`mdx
+# An MDX guide
+
+Use a fenced example inside the guide:
+
+\`\`\`python
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+\`\`\`
+\`\`\`\``;
 
 const codeTheme = `# Theme palette
 
@@ -955,6 +977,11 @@ export const streamCases: ReadonlyArray<StreamCase> = [
     id: "code-languages",
     label: "Code: languages",
     deliveries: chunkMarkdown(codeLanguages),
+  },
+  {
+    id: "code-embedded-languages",
+    label: "Code: embedded languages",
+    deliveries: chunkMarkdown(embeddedCodeLanguages),
   },
   {
     id: "code-theme-light",

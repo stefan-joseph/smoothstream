@@ -25,6 +25,17 @@ const message = createSmoothstream(container, { mode: "static" });
 message.update(previousMessage.content);
 ```
 
+Each controller represents one append-only response. Keep an active controller
+in streaming mode when input closes and update its receiving state instead of
+switching modes:
+
+```ts
+stream.update(completedMarkdown, { receiving: false });
+```
+
+Use static mode when creating a controller for content that was already
+complete. Create a new controller to render a different response.
+
 `codeHighlighter` is optional. Install `@smoothstream/code` only when fenced
 code should be highlighted.
 

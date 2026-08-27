@@ -13,6 +13,7 @@ import { createPortal } from "react-dom";
 import {
   StreamingSession,
   unitsReadyForCodeHighlights,
+  type ImageDescriptor,
   type StreamingPlaybackSnapshot,
 } from "@smoothstream/core";
 import { browserClock } from "./clock";
@@ -32,6 +33,7 @@ import { useImageReadiness } from "./use-image-readiness";
 import { useReducedMotion } from "./use-reduced-motion";
 
 const COMPLETION_ANNOUNCEMENT = "Content ready.";
+const NO_IMAGES: ReadonlyArray<ImageDescriptor> = [];
 const screenReaderOnlyStyle: CSSProperties = {
   border: 0,
   clip: "rect(0 0 0 0)",
@@ -98,16 +100,23 @@ const SmoothstreamPlayback = memo(({
     preparedInput.codeBlocks,
     codeHighlighter,
   );
+  const presentationImmediate = motionDisabled || mode === "static";
   const playbackUnits = useMemo(
-    () => unitsReadyForCodeHighlights(
-      plan.units,
+    () => presentationImmediate
+      ? plan.units
+      : unitsReadyForCodeHighlights(
+        plan.units,
+        codeHighlighter,
+        codeHighlighting.highlights,
+      ),
+    [
       codeHighlighter,
       codeHighlighting.highlights,
-    ),
-    [codeHighlighter, codeHighlighting.highlights, plan.units],
+      plan.units,
+      presentationImmediate,
+    ],
   );
   const playbackUnitSignature = playbackUnits.map((unit) => unit.id).join("|");
-  const presentationImmediate = motionDisabled || mode === "static";
   const immediate = useMemo(
     () => presentationImmediate
       ? session.immediate(preparedInput, playbackUnits)
@@ -116,7 +125,7 @@ const SmoothstreamPlayback = memo(({
   );
   const revealDuration = presentationImmediate ? 0 : duration;
   const imageReadiness = useImageReadiness(
-    preparedInput.images,
+    presentationImmediate ? NO_IMAGES : preparedInput.images,
     revealDuration,
   );
   const imageReadinessSignature = [...imageReadiness.images]
@@ -194,6 +203,8 @@ const SmoothstreamPlayback = memo(({
     codeHighlighting.highlights,
     codeHighlighting.revision,
     reveal,
+    presentationImmediate,
+    codeHighlighter !== undefined,
   );
 
   useAnimationPhase(rootRef);

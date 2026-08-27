@@ -314,7 +314,7 @@ describe("Smoothstream reduced motion", () => {
     expect(cells[3]).toHaveStyle("text-align: right");
   });
 
-  it("hides an unresolved image accessibly without delaying later text", async () => {
+  it("renders an unresolved image immediately without preloading it", async () => {
     const preference = reducedMotionQuery(true);
     vi.stubGlobal("matchMedia", preference.matchMedia);
 
@@ -346,43 +346,20 @@ describe("Smoothstream reduced motion", () => {
       </Smoothstream>,
     );
 
-    const pendingImage = container.querySelector("img");
-    const announcer = document.body.querySelector(
-      "[data-smoothstream-announcer]",
-    );
-    expect(pendingImage).toHaveAttribute("aria-hidden", "true");
-    expect(pendingImage).toHaveAttribute(
-      "data-smoothstream-image",
-      "pending",
-    );
-    const imageBlock = pendingImage?.parentElement;
+    const image = container.querySelector("img");
+    expect(image).toHaveAttribute("src", "/diagram.svg");
+    expect(image).toHaveAttribute("alt", "Diagram");
+    expect(image).not.toHaveAttribute("aria-hidden");
+    expect(image).not.toHaveAttribute("data-smoothstream-image");
+    expect(image).not.toHaveAttribute("data-smoothstream-unit");
+    expect(image).not.toHaveStyle({ visibility: "hidden" });
+    const imageBlock = image?.parentElement;
     expect(imageBlock?.style.height).toBe("");
     expect(imageBlock?.style.overflow).toBe("");
     expect(container).toHaveTextContent("Later content.");
-    expect(announcer).toBeEmptyDOMElement();
-
-    const request = MockImage.instances[0];
-    if (!request) {
-      throw new Error("Expected the image preload request to exist.");
-    }
-    request.complete = true;
-    request.naturalWidth = 640;
-    request.naturalHeight = 360;
-    await act(async () => {
-      request.onload?.();
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
-    const readyImage = container.querySelector("img");
-    expect(readyImage).toHaveAttribute("alt", "Diagram");
-    expect(readyImage).not.toHaveAttribute("aria-hidden");
-    expect(readyImage).not.toHaveAttribute("data-smoothstream-image");
-    expect(readyImage).not.toHaveAttribute("data-smoothstream-unit");
-    expect(readyImage?.parentElement).toBe(imageBlock);
-    expect(imageBlock?.style.height).toBe("");
-    expect(imageBlock?.style.overflow).toBe("");
+    expect(MockImage.instances).toHaveLength(0);
     expect(animate).not.toHaveBeenCalled();
+    await act(async () => Promise.resolve());
     expect(document.body.querySelector("[data-smoothstream-announcer]"))
       .toHaveTextContent("Content ready.");
   });

@@ -9,6 +9,7 @@ import type {
 } from "@smoothstream/core";
 import {
   createHighlighterCore,
+  guessEmbeddedLanguages,
   type DynamicImportLanguageRegistration,
   type HighlighterCore,
   type ThemedToken,
@@ -63,6 +64,13 @@ interface HighlightSession {
 }
 
 const PLAIN_LANGUAGES = new Set(["plain", "plaintext", "text", "txt"]);
+
+const INTRINSIC_COMPANION_LANGUAGES: Readonly<
+  Record<string, ReadonlyArray<string>>
+> = {
+  haml: ["ruby"],
+  mdx: ["tsx"],
+};
 
 const languageDefinitions = new Map<string, LanguageDefinition>();
 for (const info of bundledLanguagesInfo) {
@@ -218,6 +226,26 @@ export const createCodeHighlighter = (
     return highlighter;
   };
 
+  const loadCompanionLanguages = async (
+    code: string,
+    language: string,
+  ): Promise<void> => {
+    const definitions = new Map<string, LanguageDefinition>();
+    const companionLanguages = [
+      ...(INTRINSIC_COMPANION_LANGUAGES[language] ?? []),
+      ...guessEmbeddedLanguages(code, language),
+    ];
+    for (const embeddedLanguage of companionLanguages) {
+      const definition = languageDefinitions.get(
+        normalizeLanguage(embeddedLanguage),
+      );
+      if (definition) {
+        definitions.set(definition.id, definition);
+      }
+    }
+    await Promise.all([...definitions.values()].map(loadLanguage));
+  };
+
   const themePalette = (highlighter: HighlighterCore): CodeHighlightPalette => {
     if (themes) {
       const light = highlighter.getTheme(themes.light);
@@ -281,6 +309,8 @@ export const createCodeHighlighter = (
     if (!definition) {
       return plainResult(code, languageLabel, palette);
     }
+
+    await loadCompanionLanguages(code, definition.id);
 
     if (session.language !== definition.id || !code.startsWith(session.code)) {
       session.code = "";

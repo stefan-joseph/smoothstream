@@ -1,6 +1,6 @@
 {
   "name": "@smoothstream/dom",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Deterministic, paced Markdown reveal for the browser DOM",
   "license": "MIT",
   "keywords": [

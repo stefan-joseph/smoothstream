@@ -240,7 +240,9 @@ class DomStreamingController implements SmoothstreamController {
     );
     this.#session.commitInput(input);
     this.#currentInput = input;
-    this.#ensureImages(input.images);
+    if (!this.#presentationImmediate()) {
+      this.#ensureImages(input.images);
+    }
     this.#ensureCodeHighlights(input.codeBlocks);
     const units = this.#playbackUnits(input);
     this.#currentPlayback = this.#presentationImmediate()
@@ -290,10 +292,12 @@ class DomStreamingController implements SmoothstreamController {
       now,
     });
     renderDom(this.element, {
+      codeHighlighterEnabled: this.#codeHighlighter !== undefined,
       codeHighlights: this.#codeHighlights,
       compactedBlockIds: presentation.compactedBlockIds,
       compactedUnitIds: presentation.compactedUnitIds,
       images: this.#imageReadiness,
+      immediate: this.#presentationImmediate(),
       now,
       reveal: input.reveal,
       schedules: presentation.schedules,
@@ -316,11 +320,13 @@ class DomStreamingController implements SmoothstreamController {
   }
 
   #playbackUnits(input: StreamingInputSnapshot) {
-    return unitsReadyForCodeHighlights(
-      input.plan.units,
-      this.#codeHighlighter,
-      this.#codeHighlights,
-    );
+    return this.#presentationImmediate()
+      ? input.plan.units
+      : unitsReadyForCodeHighlights(
+        input.plan.units,
+        this.#codeHighlighter,
+        this.#codeHighlights,
+      );
   }
 
   #ensureCodeHighlights(requests: ReadonlyArray<CodeBlockRequest>): void {
@@ -506,8 +512,11 @@ class DomStreamingController implements SmoothstreamController {
         this.#timeouts.delete(timeout);
         if (!button.isConnected) return;
         icon?.setAttribute("data-state", "copy");
-        const label = pre.getAttribute("data-smoothstream-code-label") ?? "code";
-        button.setAttribute("aria-label", `Copy ${label} code`);
+        const label = pre.getAttribute("data-smoothstream-code-label")?.trim();
+        button.setAttribute(
+          "aria-label",
+          label ? `Copy ${label} code` : "Copy code",
+        );
       }, 2_000);
       this.#timeouts.add(timeout);
     } catch {

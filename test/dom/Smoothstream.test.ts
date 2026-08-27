@@ -325,7 +325,7 @@ describe("createSmoothstream", () => {
     controller.destroy();
   });
 
-  it("waits for highlighted code and renders the enhanced code block", async () => {
+  it("renders plain code immediately with reduced motion, then enhances it", async () => {
     const frames = installFrameHarness();
     const container = document.createElement("div");
     document.body.append(container);
@@ -350,7 +350,32 @@ describe("createSmoothstream", () => {
 
     frames.flush();
     expect(highlight).toHaveBeenCalledOnce();
-    expect(controller.element.querySelector("pre")).toBeNull();
+    expect(controller.element.querySelector("pre code")).toHaveTextContent(
+      "const ready = true;",
+    );
+    const initialPre = controller.element.querySelector<HTMLPreElement>(
+      "pre[data-smoothstream-code-block]",
+    );
+    const initialToolbar = initialPre?.querySelector(
+      "[data-smoothstream-code-toolbar]",
+    );
+    const initialLanguage = initialPre?.querySelector(
+      "[data-smoothstream-code-language]",
+    );
+    const initialButton = initialPre?.querySelector<HTMLButtonElement>(
+      "button[data-smoothstream-code-copy]",
+    );
+    expect(initialPre).not.toBeNull();
+    expect(initialToolbar?.parentElement).toBe(initialPre);
+    expect(initialLanguage).toBeEmptyDOMElement();
+    expect(initialButton).toBeEnabled();
+    expect(initialButton).toHaveAttribute("data-smoothstream-ready", "true");
+    expect(initialButton).toHaveAccessibleName("Copy code");
+
+    initialButton?.click();
+    await vi.waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith("const ready = true;\n");
+    });
 
     resolveHighlight?.({
       languageLabel: "TypeScript",
@@ -376,6 +401,11 @@ describe("createSmoothstream", () => {
     const button = pre?.querySelector<HTMLButtonElement>(
       "button[data-smoothstream-code-copy]",
     );
+    expect(pre).toBe(initialPre);
+    expect(pre?.querySelector("[data-smoothstream-code-toolbar]"))
+      .toBe(initialToolbar);
+    expect(pre?.querySelector("[data-smoothstream-code-copy]"))
+      .toBe(initialButton);
     expect(pre).toHaveAttribute("data-smoothstream-code-label", "TypeScript");
     expect(pre?.style.getPropertyValue("--smoothstream-shiki-background"))
       .toBe("#f5f5f5");
@@ -387,6 +417,7 @@ describe("createSmoothstream", () => {
     expect(button?.querySelector("svg")?.namespaceURI)
       .toBe("http://www.w3.org/2000/svg");
 
+    writeText.mockClear();
     button?.click();
     await vi.waitFor(() => {
       expect(writeText).toHaveBeenCalledWith("const ready = true;\n");
@@ -512,10 +543,11 @@ describe("createSmoothstream", () => {
     const container = document.createElement("div");
     document.body.append(container);
     const controller = createSmoothstream(container, {
-      reducedMotion: "always",
+      reducedMotion: "never",
     });
     controller.update("![Diagram](/diagram.svg)\n\nLater content.");
     frames.flush();
+    frames.flush(1_000);
 
     const pendingImage = controller.element.querySelector("img");
     expect(pendingImage).toHaveAttribute("alt", "Diagram");
