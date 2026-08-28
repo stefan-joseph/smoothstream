@@ -9,6 +9,8 @@ describe("Shiki code highlighter", () => {
     const highlighter = createCodeHighlighter();
     const session = {};
 
+    expect(highlighter.showLanguageLabels).toBe(true);
+
     const first = await highlighter.highlight({
       code: "const ready = true;\n",
       language: "ts",
@@ -105,6 +107,35 @@ describe("Shiki code highlighter", () => {
     expect(fallback.languageLabel).toBe("smoothstream-config");
     expect(fallback.palette?.backgroundColor).toBeTruthy();
     expect(fallback.palette?.color).toBeTruthy();
+  });
+
+  it("can suppress language labels for every kind of fence", async () => {
+    const highlighter = createCodeHighlighter({
+      showLanguageLabels: false,
+    });
+    const requests = [
+      { code: "echo ready\n", language: "bash", session: {} },
+      { code: "plain output\n", language: "text", session: {} },
+      {
+        code: "custom output\n",
+        language: "smoothstream-config",
+        session: {},
+      },
+    ];
+
+    const results = await Promise.all(
+      requests.map((request) => highlighter.highlight(request)),
+    );
+
+    expect(highlighter.showLanguageLabels).toBe(false);
+    expect(results.every((result) => result.languageLabel === undefined))
+      .toBe(true);
+    expect(results.map((result) => sourceOf(result.lines))).toEqual([
+      "echo ready",
+      "plain output",
+      "custom output",
+    ]);
+    expect(results.every((result) => result.palette)).toBe(true);
   });
 
   it("returns the complete palette for a bundled Shiki theme name", async () => {

@@ -54,6 +54,11 @@ export interface CodeHighlightRequest {
  */
 export interface CodeHighlighter {
   readonly name: string;
+  /**
+   * Whether renderer adapters should reserve and show language labels.
+   * Defaults to true when omitted.
+   */
+  readonly showLanguageLabels?: boolean;
   highlight(
     request: CodeHighlightRequest,
   ): CodeHighlightResult | Promise<CodeHighlightResult>;

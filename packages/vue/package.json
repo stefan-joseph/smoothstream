@@ -1,10 +1,10 @@
 {
-  "name": "@smoothstream/react",
-  "version": "0.1.2",
-  "description": "Deterministic, paced Markdown reveal for React",
+  "name": "@smoothstream/vue",
+  "version": "0.1.0",
+  "description": "Deterministic, paced Markdown reveal for Vue 3",
   "license": "MIT",
   "keywords": [
-    "react",
+    "vue",
     "markdown",
     "streaming",
     "llm"
@@ -25,7 +25,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup && node scripts/verify-client-boundary.mjs",
+    "build": "tsup && node scripts/verify-vue-boundary.mjs",
     "prepack": "npm run build"
   },
   "publishConfig": {
@@ -35,8 +35,7 @@
     "node": ">=20"
   },
   "peerDependencies": {
-    "react": "^18.2.0 || ^19.0.0",
-    "react-dom": "^18.2.0 || ^19.0.0"
+    "vue": "^3.5.0"
   },
   "dependencies": {
     "@smoothstream/core": "^0.1.2",
@@ -46,9 +45,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/stefan-joseph/smoothstream.git",
-    "directory": "packages/react"
+    "directory": "packages/vue"
   },
-  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/react",
+  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/vue",
   "bugs": {
     "url": "https://github.com/stefan-joseph/smoothstream/issues"
   }

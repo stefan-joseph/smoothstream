@@ -2,7 +2,7 @@
   "name": "smoothstream",
   "version": "0.0.0",
   "private": true,
-  "description": "Deterministic, paced Markdown reveal for React and the browser DOM",
+  "description": "Deterministic, paced Markdown reveal for React, Vue, and the browser DOM",
   "license": "MIT",
   "type": "module",
   "repository": {
@@ -17,7 +17,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=@smoothstream/core && npm run build --workspace=@smoothstream/styles --if-present && npm run build --workspace=@smoothstream/react && npm run build --workspace=@smoothstream/dom && npm run build --workspace=@smoothstream/code",
+    "build": "npm run build --workspace=@smoothstream/core && npm run build --workspace=@smoothstream/styles --if-present && npm run build --workspace=@smoothstream/react && npm run build --workspace=@smoothstream/vue && npm run build --workspace=@smoothstream/dom && npm run build --workspace=@smoothstream/code",
     "check:boundaries": "npm run check:boundaries --workspace=@smoothstream/core",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -35,6 +35,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/unist": "^3.0.3",
+    "@vue/server-renderer": "^3.5.42",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "jsdom": "^27.3.0",
     "react": "^19.2.3",
@@ -42,7 +43,8 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",
-    "vitest": "4.1.10"
+    "vitest": "4.1.10",
+    "vue": "^3.5.42"
   },
   "allowScripts": {
     "esbuild@0.27.7": true,

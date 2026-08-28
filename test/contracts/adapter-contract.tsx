@@ -459,5 +459,38 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
         driver.destroy();
       }
     });
+
+    it("hides language labels without removing highlighting or the copy control", async () => {
+      const highlighter: CodeHighlighter = {
+        highlight: () => ({
+          languageLabel: "TypeScript",
+          lines: [{ tokens: [{ content: "const ready = true;" }] }],
+        }),
+        name: "hidden-label-contract-highlighter",
+        showLanguageLabels: false,
+      };
+      const driver = await mount("```ts\nconst ready = true;\n```", {
+        codeHighlighter: highlighter,
+        mode: "static",
+      });
+
+      try {
+        await driver.flush();
+        const pre = driver.element.querySelector(
+          "pre[data-smoothstream-code-block]",
+        );
+        expect(pre).toHaveAttribute("data-smoothstream-code-language-hidden");
+        expect(pre).toHaveAttribute("data-smoothstream-code-label", "");
+        expect(pre?.querySelector("[data-smoothstream-code-language]"))
+          .toBeEmptyDOMElement();
+        expect(pre?.querySelector("code")).toHaveTextContent(
+          "const ready = true;",
+        );
+        expect(pre?.querySelector("[data-smoothstream-code-copy]"))
+          .toHaveAccessibleName("Copy code");
+      } finally {
+        driver.destroy();
+      }
+    });
   });
 };

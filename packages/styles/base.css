@@ -80,47 +80,40 @@
 [data-smoothstream-kind="text"],
 [data-smoothstream-kind="inline"],
 [data-smoothstream-kind="link"] {
-  animation: smoothstream-text-in
-    var(--smoothstream-duration, 180ms) cubic-bezier(0.22, 1, 0.36, 1)
-    var(--smoothstream-animation-delay, 0ms) both;
+  animation: smoothstream-text-in var(--smoothstream-duration, 180ms)
+    cubic-bezier(0.22, 1, 0.36, 1) var(--smoothstream-animation-delay, 0ms) both;
 }
 
 [data-smoothstream-kind="heading"],
 [data-smoothstream-kind="list-item"] {
-  animation: smoothstream-block-in
-    var(--smoothstream-duration, 260ms) cubic-bezier(0.22, 1, 0.36, 1)
-    var(--smoothstream-animation-delay, 0ms) both;
+  animation: smoothstream-block-in var(--smoothstream-duration, 260ms)
+    cubic-bezier(0.22, 1, 0.36, 1) var(--smoothstream-animation-delay, 0ms) both;
 }
 
 [data-smoothstream-kind="block"] {
   transform-origin: center;
-  animation: smoothstream-rule-in
-    var(--smoothstream-duration, 1200ms) cubic-bezier(0.16, 1, 0.3, 1)
-    var(--smoothstream-animation-delay, 0ms) both;
+  animation: smoothstream-rule-in var(--smoothstream-duration, 1200ms)
+    cubic-bezier(0.16, 1, 0.3, 1) var(--smoothstream-animation-delay, 0ms) both;
 }
 
 [data-smoothstream-kind="table-row"] {
-  animation: smoothstream-table-row-in
-    var(--smoothstream-duration, 400ms) cubic-bezier(0.22, 1, 0.36, 1)
-    var(--smoothstream-animation-delay, 0ms) both;
+  animation: smoothstream-table-row-in var(--smoothstream-duration, 400ms)
+    cubic-bezier(0.22, 1, 0.36, 1) var(--smoothstream-animation-delay, 0ms) both;
 }
 
 [data-smoothstream-kind="image"] {
-  animation: smoothstream-image-in
-    var(--smoothstream-duration, 400ms) cubic-bezier(0.22, 1, 0.36, 1)
-    var(--smoothstream-animation-delay, 0ms) both;
+  animation: smoothstream-image-in var(--smoothstream-duration, 400ms)
+    cubic-bezier(0.22, 1, 0.36, 1) var(--smoothstream-animation-delay, 0ms) both;
 }
 
 [data-smoothstream-marker="active"]::marker {
-  animation: smoothstream-marker-in
-    var(--smoothstream-duration, 400ms) cubic-bezier(0.22, 1, 0.36, 1)
-    var(--smoothstream-animation-delay, 0ms) both;
+  animation: smoothstream-marker-in var(--smoothstream-duration, 400ms)
+    cubic-bezier(0.22, 1, 0.36, 1) var(--smoothstream-animation-delay, 0ms) both;
 }
 
 [data-smoothstream-task="active"] {
-  animation: smoothstream-task-in
-    var(--smoothstream-duration, 400ms) cubic-bezier(0.22, 1, 0.36, 1)
-    var(--smoothstream-animation-delay, 0ms) both;
+  animation: smoothstream-task-in var(--smoothstream-duration, 400ms)
+    cubic-bezier(0.22, 1, 0.36, 1) var(--smoothstream-animation-delay, 0ms) both;
 }
 
 [data-smoothstream-code-copy] {
@@ -175,15 +168,15 @@ pre[data-smoothstream-code-block] {
 [data-smoothstream-code-language] {
   min-width: 0;
   overflow: hidden;
-  font-size: 0.875em;
+  font-size: var(--smoothstream-code-language-font-size, 0.875em);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 [data-smoothstream-code-copy] {
   display: grid;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
+  inline-size: var(--smoothstream-code-copy-button-size, max(1.75rem, 1.75em));
+  block-size: var(--smoothstream-code-copy-button-size, max(1.75rem, 1.75em));
   flex: 0 0 auto;
   place-items: center;
   padding: 0;
@@ -201,14 +194,75 @@ pre[data-smoothstream-code-block] > code {
   overflow-x: auto;
 }
 
+/*
+ * Without a language label, the toolbar no longer reserves a header row. The
+ * copy control floats above the scrollport while trailing inline padding lets
+ * every line scroll completely clear of it.
+ */
+pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden] {
+  position: relative;
+}
+
+pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden]
+  [data-smoothstream-code-toolbar] {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: var(--smoothstream-code-copy-inset-block, 0.45rem);
+  inset-inline-end: var(--smoothstream-code-copy-inset-inline, 0.45rem);
+  min-height: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden]
+  [data-smoothstream-code-language] {
+  display: none;
+}
+
+pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden]
+  [data-smoothstream-code-copy] {
+  margin-inline-end: 0;
+  border-radius: var(--smoothstream-code-copy-border-radius, 0.375rem);
+  background-color: var(
+    --smoothstream-code-copy-background,
+    color-mix(
+      in srgb,
+      var(
+          --smoothstream-code-background,
+          var(
+            --smoothstream-shiki-background,
+            var(--smoothstream-code-default-background, transparent)
+          )
+        )
+        20%,
+      transparent
+    )
+  );
+  backdrop-filter: blur(var(--smoothstream-code-copy-backdrop-blur, 8px));
+  -webkit-backdrop-filter: blur(
+    var(--smoothstream-code-copy-backdrop-blur, 4px)
+  );
+}
+
+pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden]
+  > code {
+  box-sizing: border-box;
+  inline-size: 100%;
+  padding-inline-end: calc(
+    var(--smoothstream-code-padding-inline, 0px) +
+      var(--smoothstream-code-copy-button-size, max(1.75rem, 1.75em)) +
+      var(--smoothstream-code-copy-clearance, 0.5rem)
+  );
+}
+
 [data-smoothstream-code-icon-swap] {
   position: relative;
   display: inline-grid;
 }
 
 [data-smoothstream-code-icon] {
-  inline-size: 1rem;
-  block-size: 1rem;
+  inline-size: var(--smoothstream-code-copy-icon-size, max(14px, 1em));
+  block-size: var(--smoothstream-code-copy-icon-size, max(14px, 1em));
   grid-area: 1 / 1;
   transition:
     opacity var(--smoothstream-icon-swap-duration, 250ms) ease-in-out,
@@ -274,16 +328,20 @@ pre[data-smoothstream-code-block] > code {
 
 @media (prefers-reduced-motion: reduce) {
   [data-smoothstream-reduced-motion="system"] [data-smoothstream-unit],
-  [data-smoothstream-reduced-motion="system"] [data-smoothstream-marker="active"]::marker,
+  [data-smoothstream-reduced-motion="system"]
+    [data-smoothstream-marker="active"]::marker,
   [data-smoothstream-reduced-motion="system"] [data-smoothstream-task="active"],
   [data-smoothstream-reduced-motion="system"] [data-smoothstream-code-copy],
-  [data-smoothstream-reduced-motion="system"] [data-smoothstream-code-icon-swap],
+  [data-smoothstream-reduced-motion="system"]
+    [data-smoothstream-code-icon-swap],
   [data-smoothstream-reduced-motion="system"] [data-smoothstream-code-icon],
   [data-smoothstream-reduced-motion="always"] [data-smoothstream-unit],
-  [data-smoothstream-reduced-motion="always"] [data-smoothstream-marker="active"]::marker,
+  [data-smoothstream-reduced-motion="always"]
+    [data-smoothstream-marker="active"]::marker,
   [data-smoothstream-reduced-motion="always"] [data-smoothstream-task="active"],
   [data-smoothstream-reduced-motion="always"] [data-smoothstream-code-copy],
-  [data-smoothstream-reduced-motion="always"] [data-smoothstream-code-icon-swap],
+  [data-smoothstream-reduced-motion="always"]
+    [data-smoothstream-code-icon-swap],
   [data-smoothstream-reduced-motion="always"] [data-smoothstream-code-icon] {
     animation: none;
     transition: none;

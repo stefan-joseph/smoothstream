@@ -301,6 +301,7 @@ class DomStreamingController implements SmoothstreamController {
       now,
       reveal: input.reveal,
       schedules: presentation.schedules,
+      showLanguageLabels: this.#codeHighlighter?.showLanguageLabels !== false,
       tree: input.plan.tree,
       units: input.plan.units,
     });

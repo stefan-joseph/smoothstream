@@ -1,6 +1,6 @@
 {
   "name": "@smoothstream/core",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Framework-neutral streaming Markdown planning and scheduling",
   "license": "MIT",
   "keywords": [
@@ -14,6 +14,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./web": {
+      "types": "./dist/web.d.ts",
+      "import": "./dist/web.js"
     }
   },
   "files": [

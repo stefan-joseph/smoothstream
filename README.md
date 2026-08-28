@@ -1,7 +1,7 @@
 # Smoothstream
 
-Deterministic, paced Markdown reveal for React and the browser DOM, built on a
-framework-neutral scheduling and Markdown-analysis core.
+Deterministic, paced Markdown reveal for React, Vue 3, and the browser DOM,
+built on a framework-neutral scheduling and Markdown-analysis core.
 
 Smoothstream is in early development. The current milestone includes:
 
@@ -10,22 +10,24 @@ Smoothstream is in early development. The current milestone includes:
 - source-backed reveal-unit identities;
 - block-aware look-ahead for append-only streams;
 - opinionated semantic reveal for prose, headings, lists, tables, code, and images;
-- React and vanilla DOM renderers.
+- React, Vue, and vanilla DOM renderers.
 
 ## Architecture
 
 ```text
 packages/core   framework-independent Markdown analysis, scheduling, and clocks
 packages/react  React rendering and browser playback
+packages/vue    Vue 3 rendering, SSR, hydration, and browser playback
 packages/dom    vanilla DOM rendering and browser playback
 packages/styles shared functional CSS and default prose theme
 packages/code   optional Shiki syntax-highlighting adapter
 ```
 
-`@smoothstream/core` may not import React or browser DOM APIs. React users install
-`@smoothstream/react`, while vanilla users install `@smoothstream/dom`; each
-adapter installs core and the shared styles automatically. The workspace keeps
-optional integrations out of the renderer packages.
+`@smoothstream/core` may not import React, Vue, or browser DOM APIs. React users
+install `@smoothstream/react`, Vue users install `@smoothstream/vue`, and
+vanilla users install `@smoothstream/dom`; each adapter installs core and the
+shared styles automatically. The workspace keeps optional integrations out of
+the renderer packages.
 
 ## React usage
 
@@ -49,6 +51,37 @@ export function AssistantMessage({ text, receiving }: Props) {
   );
 }
 ```
+
+## Vue usage
+
+Vue uses an explicit `markdown` prop. Passing a `ref` from `<script setup>` is
+not required: Vue automatically unwraps refs used in templates and keeps the
+prop reactive.
+
+```vue
+<script setup lang="ts">
+import { Smoothstream } from "@smoothstream/vue";
+
+defineProps<{
+  text: string;
+  receiving: boolean;
+}>();
+</script>
+
+<template>
+  <Smoothstream
+    :markdown="text"
+    :receiving="receiving"
+    :interval="3"
+    :duration="1000"
+    reveal="character"
+  />
+</template>
+```
+
+This same component works in Vue SSR and Nuxt. `mode="static"` emits settled
+semantic HTML on the server and hydrates that markup in place; browser-owned
+enhancements such as asynchronous syntax highlighting begin after mount.
 
 ## Vanilla DOM usage
 
@@ -156,14 +189,16 @@ system preference changes. Remounting applies the newly selected policy to the
 next response.
 
 The published React entry is marked as a Client Component, while remaining
-safe for frameworks such as Next.js to prerender and hydrate. In streaming mode
-with `reducedMotion="system"`, the server and first hydration render share an empty
-motion-pending shell; the browser then resolves `prefers-reduced-motion` before
-any Markdown becomes visible. A stream mounted with empty children therefore
-resolves its reduced-motion policy while it is waiting for the first model
-token. Later client-only mounts resolve synchronously. Forced `"always"` and
-`"never"` reduced-motion policies are already deterministic during server
-rendering and do not need the pending state.
+safe for frameworks such as Next.js to prerender and hydrate. The Vue component
+supports the equivalent Vue SSR and Nuxt lifecycle without requiring a Nuxt
+module. In streaming mode with `reducedMotion="system"`, the server and first
+hydration render share an empty motion-pending shell; the browser then resolves
+`prefers-reduced-motion` before any Markdown becomes visible. A stream mounted
+with empty input therefore resolves its reduced-motion policy while it is
+waiting for the first model token. Later client-only mounts resolve
+synchronously. Forced `"always"` and `"never"` reduced-motion policies are
+already deterministic during server rendering and do not need the pending
+state.
 
 `mode` controls content presentation separately from reduced-motion policy. It defaults
 to `"streaming"`. Use `mode="static"` for previously stored messages or other
@@ -192,6 +227,8 @@ every Smoothstream user ship Shiki:
 ```sh
 npm install @smoothstream/react @smoothstream/code
 # or
+npm install @smoothstream/vue @smoothstream/code
+# or
 npm install @smoothstream/dom @smoothstream/code
 ```
 
@@ -205,6 +242,21 @@ import { codeHighlighter } from "@smoothstream/code";
 >
   {text}
 </Smoothstream>
+```
+
+```vue
+<script setup lang="ts">
+import { Smoothstream } from "@smoothstream/vue";
+import { codeHighlighter } from "@smoothstream/code";
+</script>
+
+<template>
+  <Smoothstream
+    :markdown="text"
+    :receiving="receiving"
+    :code-highlighter="codeHighlighter"
+  />
+</template>
 ```
 
 ```ts
@@ -224,6 +276,15 @@ any bundled Shiki theme to choose another one:
 import { createCodeHighlighter } from "@smoothstream/code";
 
 const codeHighlighter = createCodeHighlighter({ theme: "vitesse-light" });
+```
+
+Language labels are shown by default. Hide them for every fenced block while
+retaining syntax highlighting and the copy control:
+
+```tsx
+const codeHighlighter = createCodeHighlighter({
+  showLanguageLabels: false,
+});
 ```
 
 Use Shiki's `themes` API when the surrounding application supports light and
@@ -435,13 +496,14 @@ npm run typecheck
 npm run build
 ```
 
-`npm run build` verifies the React client boundary, both adapters' automatic
-CSS imports, and the DOM adapter's lack of framework dependencies. A
+`npm run build` verifies the React client boundary, all web adapters' automatic
+CSS imports, the Vue package's peer/external boundary, and the DOM adapter's
+lack of framework dependencies. A
 source-level boundary check keeps `@smoothstream/core` free of framework
 imports, CSS, adapter source, and browser globals.
 
 Tests mirror the source architecture under `test/core`, `test/markdown`,
-`test/react`, `test/dom`, and `test/code`. Shared Markdown cases live in
+`test/react`, `test/vue`, `test/dom`, and `test/code`. Shared Markdown cases live in
 `test/fixtures`; the prefix suite feeds every character-length prefix through
 one persistent scheduler, while the React fixture suite verifies that settled
 output matches ordinary static Markdown HTML. Core session tests separately

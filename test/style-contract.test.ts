@@ -31,11 +31,14 @@ describe("stylesheet contract", () => {
     );
     expect(css).toContain("prefers-reduced-motion: reduce");
     expect(css).toContain("[data-smoothstream-code-copy]");
+    expect(css).toMatch(
+      /\[data-smoothstream-code-copy\] \{[\s\S]*?--smoothstream-code-copy-button-size,[\s\S]*?max\(1\.75rem, 1\.75em\)/,
+    );
     expect(css).toContain("pre[data-smoothstream-code-block]");
     expect(css).toContain("[data-smoothstream-code-toolbar]");
     expect(css).toContain("justify-content: space-between");
     expect(css).toMatch(
-      /\[data-smoothstream-code-language\] \{[\s\S]*?font-size: 0\.875em;/,
+      /\[data-smoothstream-code-language\] \{[\s\S]*?font-size: var\(--smoothstream-code-language-font-size, 0\.875em\);/,
     );
     expect(css).toContain("--smoothstream-shiki-background");
     expect(css).toMatch(
@@ -44,13 +47,23 @@ describe("stylesheet contract", () => {
     expect(css).toMatch(
       /pre\[data-smoothstream-code-block\] > code \{[\s\S]*?overflow-x: auto;/,
     );
+    expect(css).toContain("data-smoothstream-code-language-hidden");
+    expect(css).toMatch(
+      /data-smoothstream-code-language-hidden[\s\S]*?\[data-smoothstream-code-toolbar\] \{[\s\S]*?position: absolute;[\s\S]*?pointer-events: none;/,
+    );
+    expect(css).toMatch(
+      /data-smoothstream-code-language-hidden[\s\S]*?\[data-smoothstream-code-copy\] \{[\s\S]*?background-color:[\s\S]*?backdrop-filter: blur/,
+    );
+    expect(css).toMatch(
+      /data-smoothstream-code-language-hidden[\s\S]*?> code \{[\s\S]*?padding-inline-end: calc\([\s\S]*?--smoothstream-code-copy-button-size[\s\S]*?--smoothstream-code-copy-clearance/,
+    );
     expect(css).not.toContain("ui-monospace");
     expect(css).not.toContain("--smoothstream-font-mono");
     expect(css).not.toContain("--smoothstream-code-font-size");
     expect(css).not.toContain("--smoothstream-inline-code-font-size");
     expect(css).toContain("[data-smoothstream-code-icon-swap]");
     expect(css).toMatch(
-      /\[data-smoothstream-code-icon\] \{[\s\S]*?inline-size: 1rem;[\s\S]*?block-size: 1rem;/,
+      /\[data-smoothstream-code-icon\] \{[\s\S]*?inline-size: var\(--smoothstream-code-copy-icon-size, max\(14px, 1em\)\);[\s\S]*?block-size: var\(--smoothstream-code-copy-icon-size, max\(14px, 1em\)\);/,
     );
     expect(css).toContain("--smoothstream-icon-swap-duration");
     expect(css).toContain('[data-smoothstream-ready="true"]');
@@ -241,7 +254,7 @@ describe("stylesheet contract", () => {
       /\[data-smoothstream-code-toolbar\][\s\S]*?padding: 0\.55rem var\(--smoothstream-code-padding-inline\) 0;/,
     );
     expect(css).toMatch(
-      /\[data-smoothstream-code-copy\][\s\S]*?margin-inline-end: calc\(\(1rem - 1\.75rem\) \/ 2\);/,
+      /\[data-smoothstream-code-copy\][\s\S]*?margin-inline-end: calc\([\s\S]*?var\(--smoothstream-code-copy-icon-size, max\(14px, 1em\)\)[\s\S]*?var\([\s\S]*?--smoothstream-code-copy-button-size,[\s\S]*?max\(1\.75rem, 1\.75em\)/,
     );
     expect(css).toMatch(
       /\[data-smoothstream-code-block\] > code[\s\S]*?padding: 0\.55em var\(--smoothstream-code-padding-inline\) 0\.9em;/,

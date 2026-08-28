@@ -44,9 +44,16 @@ interface ShikiCodeHighlighterMultipleThemeOptions {
   readonly defaultColor?: ShikiCodeHighlighterDefaultColor;
 }
 
-export type ShikiCodeHighlighterOptions =
-  | ShikiCodeHighlighterSingleThemeOptions
-  | ShikiCodeHighlighterMultipleThemeOptions;
+interface ShikiCodeHighlighterPresentationOptions {
+  /** Show a language label above each fenced code block. @default true */
+  readonly showLanguageLabels?: boolean;
+}
+
+export type ShikiCodeHighlighterOptions = ShikiCodeHighlighterPresentationOptions &
+  (
+    | ShikiCodeHighlighterSingleThemeOptions
+    | ShikiCodeHighlighterMultipleThemeOptions
+  );
 
 interface LanguageDefinition {
   readonly displayName: string;
@@ -151,7 +158,7 @@ const appendStableTokens = (
 
 const plainResult = (
   code: string,
-  languageLabel: string,
+  languageLabel: string | undefined,
   palette?: CodeHighlightPalette,
 ): CodeHighlightResult => {
   const lines = code.split("\n");
@@ -162,7 +169,7 @@ const plainResult = (
     lines: lines.map((line) => ({
       tokens: line.length > 0 ? [{ content: line }] : [],
     })),
-    languageLabel,
+    ...(languageLabel ? { languageLabel } : {}),
     ...(palette ? { palette } : {}),
   };
 };
@@ -176,6 +183,7 @@ export const createCodeHighlighter = (
 ): CodeHighlighter => {
   const unsafeOptions = options as {
     readonly defaultColor?: ShikiCodeHighlighterDefaultColor;
+    readonly showLanguageLabels?: boolean;
     readonly theme?: BundledTheme;
     readonly themes?: ShikiCodeHighlighterThemes;
   };
@@ -188,6 +196,7 @@ export const createCodeHighlighter = (
   const themes = unsafeOptions.themes;
   const theme = themes ? undefined : (unsafeOptions.theme ?? "github-light");
   const defaultColor = unsafeOptions.defaultColor ?? "light";
+  const showLanguageLabels = unsafeOptions.showLanguageLabels ?? true;
   const themeNames = themes
     ? [themes.light, themes.dark]
     : [theme ?? "github-light"];
@@ -298,11 +307,13 @@ export const createCodeHighlighter = (
       ? await loadLanguage(definition)
       : await loadBaseHighlighter();
     const palette = themePalette(highlighter);
-    const languageLabel = definition?.displayName ?? (
-      PLAIN_LANGUAGES.has(normalized)
-        ? "Plain text"
-        : language.trim() || "Plain text"
-    );
+    const languageLabel = showLanguageLabels
+      ? definition?.displayName ?? (
+        PLAIN_LANGUAGES.has(normalized)
+          ? "Plain text"
+          : language.trim() || "Plain text"
+      )
+      : undefined;
     if (PLAIN_LANGUAGES.has(normalized)) {
       return plainResult(code, languageLabel, palette);
     }
@@ -320,7 +331,11 @@ export const createCodeHighlighter = (
       session.trailingTokens = [];
     }
     if (session.code === code) {
-      return { languageLabel, lines: session.lines, palette };
+      return {
+        ...(languageLabel ? { languageLabel } : {}),
+        lines: session.lines,
+        palette,
+      };
     }
 
     if (!session.tokenizer) {
@@ -345,11 +360,16 @@ export const createCodeHighlighter = (
     const { stable } = await session.tokenizer.enqueue(delta);
     appendStableTokens(session, stable);
     session.code = code;
-    return { languageLabel, lines: [...session.lines], palette };
+    return {
+      ...(languageLabel ? { languageLabel } : {}),
+      lines: [...session.lines],
+      palette,
+    };
   };
 
   return {
     name: "@smoothstream/code",
+    showLanguageLabels,
     supportsLanguage: (language) => {
       const normalized = normalizeLanguage(language);
       return PLAIN_LANGUAGES.has(normalized) ||

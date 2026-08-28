@@ -10,7 +10,7 @@ const workspaceRoot = path.resolve(
   "../..",
 );
 
-const publishOrder = ["core", "styles", "code", "react", "dom"];
+const publishOrder = ["core", "styles", "code", "react", "vue", "dom"];
 
 const runNpm = (args, options = {}) =>
   spawnSync("npm", args, {

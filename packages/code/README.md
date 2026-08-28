@@ -23,3 +23,14 @@ import { createSmoothstream } from "@smoothstream/dom";
 
 createSmoothstream(container, { codeHighlighter });
 ```
+
+Language labels are shown by default. Hide them globally while retaining syntax
+highlighting and the copy control:
+
+```ts
+import { createCodeHighlighter } from "@smoothstream/code";
+
+const codeHighlighter = createCodeHighlighter({
+  showLanguageLabels: false,
+});
+```

@@ -5,6 +5,7 @@ export default defineConfig({
   dts: true,
   entry: {
     index: "src/index.ts",
+    web: "src/web.ts",
   },
   format: ["esm"],
   outDir: "dist",

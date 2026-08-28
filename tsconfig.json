@@ -7,9 +7,12 @@
     "paths": {
       "@smoothstream/code": ["./packages/code/src/index.ts"],
       "@smoothstream/core": ["./packages/core/src/index.ts"],
+      "@smoothstream/core/web": ["./packages/core/src/web.ts"],
       "@smoothstream/dom": ["./packages/dom/src/index.ts"],
       "@smoothstream/react": ["./packages/react/src/index.ts"],
       "@smoothstream/react/styles.css": ["./packages/styles/styles.css"],
+      "@smoothstream/vue": ["./packages/vue/src/index.ts"],
+      "@smoothstream/vue/styles.css": ["./packages/styles/styles.css"],
       "@smoothstream/styles/base.css": ["./packages/styles/base.css"],
       "@smoothstream/styles/styles.css": ["./packages/styles/styles.css"]
     },
