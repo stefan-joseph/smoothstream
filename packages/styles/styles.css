@@ -117,6 +117,7 @@
     transparent
   );
   --smoothstream-code-padding-inline: 1rem;
+  --smoothstream-code-hidden-padding-block: 0.725em;
   --smoothstream-code-margin-block: 0.75em;
   --smoothstream-p-margin-block-start: 0;
   --smoothstream-p-margin-block-end: 1em;
@@ -483,7 +484,7 @@
   line-height: 1.5;
 }
 
-:where([data-smoothstream-theme="default"] [data-smoothstream-code-copy]) {
+:where([data-smoothstream-theme="default"] [data-smoothstream-code-copy-slot]) {
   /* Pull the larger hit target so its icon lines up with the inline inset. */
   margin-inline-end: calc(
     (
@@ -535,6 +536,14 @@
   [data-smoothstream-theme="default"] [data-smoothstream-code-block] > code
 ) {
   padding: 0.55em var(--smoothstream-code-padding-inline) 0.9em;
+}
+
+:where(
+  [data-smoothstream-theme="default"]
+    [data-smoothstream-code-block][data-smoothstream-code-language-hidden]
+    > code
+) {
+  padding-block: var(--smoothstream-code-hidden-padding-block);
 }
 
 :where([data-smoothstream-theme="default"] [data-smoothstream-table-shell]) {

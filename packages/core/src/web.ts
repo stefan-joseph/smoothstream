@@ -35,6 +35,8 @@ export interface WebTextNode {
 
 export interface WebElementNode {
   readonly children: ReadonlyArray<WebRenderNode>;
+  /** Complete source copied by an enhanced code block; never rendered as an attribute. */
+  readonly codeCopyValue?: string;
   readonly key: string;
   readonly namespace?: "svg";
   readonly properties: WebProperties;
@@ -54,6 +56,11 @@ interface ResolvedCodeSchedules {
     ReadonlyArray<ScheduledUnit | undefined>
   >;
   readonly lines: ReadonlyArray<ScheduledUnit | undefined>;
+}
+
+interface CodeBlockScheduleInfo {
+  readonly firstLine: ScheduledUnit | undefined;
+  readonly lineCount: number;
 }
 
 export interface WebPresentationCache {
@@ -80,6 +87,7 @@ export interface WebPresentationState {
   readonly codeHighlights: ReadonlyMap<number, ResolvedCodeHighlight>;
   readonly compactedBlockIds: ReadonlySet<string>;
   readonly compactedUnitIds: WebCompactedUnitLookup;
+  readonly confirmedBlockIds: ReadonlySet<string>;
   readonly images: ReadonlyMap<string, ImageReadiness>;
   readonly immediate: boolean;
   readonly now: number;
@@ -123,6 +131,22 @@ const nodeRange = (node: HastElement | Text): SourceRange | undefined => {
   const start = node.position?.start.offset;
   const end = node.position?.end.offset;
   return start === undefined || end === undefined ? undefined : { end, start };
+};
+
+const hastTextContent = (node: ElementContent): string =>
+  node.type === "text"
+    ? node.value
+    : node.type === "element"
+      ? node.children.map(hastTextContent).join("")
+      : "";
+
+const canonicalCodeValue = (node: HastElement): string => {
+  const code = node.children.find(
+    (child): child is HastElement =>
+      child.type === "element" && child.tagName === "code",
+  );
+  const value = code ? code.children.map(hastTextContent).join("") : "";
+  return value.endsWith("\n") ? value.slice(0, -1) : value;
 };
 
 const nodeKey = (node: HastElement | Text, path: string): string =>
@@ -556,6 +580,31 @@ const transformCodeText = (
   return result;
 };
 
+const codeBlockScheduleInfo = (
+  node: HastElement,
+  blockStart: number,
+  state: WebPresentationState,
+): CodeBlockScheduleInfo => {
+  const code = node.children.find(
+    (child): child is HastElement =>
+      child.type === "element" && child.tagName === "code",
+  );
+  const text = code?.children.find(
+    (child): child is Text => child.type === "text",
+  );
+  const cached = text
+    ? state.cache?.codeSchedulesBySnapshot.get(state.schedules)?.get(text)
+    : undefined;
+  if (cached?.blockStart === blockStart) {
+    return { firstLine: cached.lines[0], lineCount: cached.lines.length };
+  }
+  const value = canonicalCodeValue(node);
+  return {
+    firstLine: state.schedules.get(createCodeLineUnitId(blockStart, 0)),
+    lineCount: value.length === 0 ? 0 : value.split("\n").length,
+  };
+};
+
 const codeBlockWebProperties = (
   node: HastElement,
   state: WebPresentationState,
@@ -570,6 +619,13 @@ const codeBlockWebProperties = (
   const languageLabel = state.showLanguageLabels === false
     ? undefined
     : highlight?.languageLabel;
+  const scheduleInfo = blockStart === undefined
+    ? undefined
+    : codeBlockScheduleInfo(node, blockStart, state);
+  const entranceSchedule = scheduleInfo?.firstLine;
+  const entranceActive = !state.immediate &&
+    entranceSchedule !== undefined &&
+    isAnimating(entranceSchedule, state.now);
   const paletteStyle = {
     ...palette?.style,
     ...(palette?.backgroundColor
@@ -590,15 +646,38 @@ const codeBlockWebProperties = (
   return {
     ...properties,
     "data-smoothstream-code-copy-ready": blockStart !== undefined &&
-      state.compactedBlockIds.has(`block:${blockStart}`),
+      state.confirmedBlockIds.has(`block:${blockStart}`),
     "data-smoothstream-code-label": languageLabel ?? "",
+    ...(scheduleInfo?.lineCount === 1
+      ? { "data-smoothstream-code-single-line": true }
+      : {}),
+    ...(entranceActive
+      ? {
+          "data-smoothstream-animation-duration": entranceSchedule.duration,
+          "data-smoothstream-animation-start": entranceSchedule.startAt,
+          "data-smoothstream-code-enter": "active",
+        }
+      : {}),
     ...(state.showLanguageLabels === false
       ? { "data-smoothstream-code-language-hidden": true }
       : {}),
-    ...(Object.keys(paletteStyle).length > 0
+    ...(Object.keys(paletteStyle).length > 0 || entranceActive
       ? {
-          "data-smoothstream-code-theme": true,
-          style: styleWith(properties.style, paletteStyle),
+          ...(Object.keys(paletteStyle).length > 0
+            ? { "data-smoothstream-code-theme": true }
+            : {}),
+          style: styleWith(properties.style, {
+            ...paletteStyle,
+            ...(entranceActive
+              ? {
+                  "--smoothstream-animation-delay": `${Math.min(
+                    0,
+                    entranceSchedule.startAt - state.now,
+                  )}ms`,
+                  "--smoothstream-duration": `${entranceSchedule.duration}ms`,
+                }
+              : {}),
+          }),
         }
       : {}),
   };
@@ -654,59 +733,68 @@ const enhancedCodeBlock = (
   rendered: WebElementNode,
   label: string,
   copyReady: boolean,
+  copyValue: string | undefined,
 ): WebElementNode => {
   const key = `${rendered.key}:enhanced`;
   const copyLabel = label ? `Copy ${label} code` : "Copy code";
-  return elementSpec(
-    rendered.key,
-    "pre",
-    {
-      ...rendered.properties,
-      "data-smoothstream-code-block": true,
-    },
-    [
-      elementSpec(
-        `${key}:toolbar`,
+  const copyButton = copyReady
+    ? elementSpec(
+      `${key}:copy`,
+      "button",
+      {
+        "aria-label": copyLabel,
+        "data-smoothstream-code-copy": true,
+        "data-smoothstream-ready": "true",
+        type: "button",
+      },
+      [elementSpec(
+        `${key}:icons`,
         "span",
-        { "data-smoothstream-code-toolbar": true },
+        {
+          "aria-hidden": true,
+          "data-smoothstream-code-icon-swap": true,
+          "data-state": "copy",
+        },
         [
-          elementSpec(
-            `${key}:language`,
-            "span",
-            { "data-smoothstream-code-language": true },
-            label ? [textSpec(`${key}:language:text`, label)] : [],
-          ),
-          elementSpec(
-            `${key}:copy`,
-            "button",
-            {
-              "aria-hidden": copyReady ? undefined : true,
-              "aria-label": copyLabel,
-              "data-smoothstream-code-copy": true,
-              "data-smoothstream-ready": copyReady,
-              disabled: !copyReady,
-              tabIndex: copyReady ? 0 : -1,
-              type: "button",
-            },
-            [elementSpec(
-              `${key}:icons`,
-              "span",
-              {
-                "aria-hidden": true,
-                "data-smoothstream-code-icon-swap": true,
-                "data-state": "copy",
-              },
-              [
-                codeIcon(`${key}:copy-icon`, "copy"),
-                codeIcon(`${key}:check-icon`, "check"),
-              ],
-            )],
-          ),
+          codeIcon(`${key}:copy-icon`, "copy"),
+          codeIcon(`${key}:check-icon`, "check"),
         ],
-      ),
-      ...rendered.children,
-    ],
-  );
+      )],
+    )
+    : undefined;
+  return {
+    ...elementSpec(
+      rendered.key,
+      "pre",
+      {
+        ...rendered.properties,
+        "data-smoothstream-code-block": true,
+      },
+      [
+        elementSpec(
+          `${key}:toolbar`,
+          "span",
+          { "data-smoothstream-code-toolbar": true },
+          [
+            elementSpec(
+              `${key}:language`,
+              "span",
+              { "data-smoothstream-code-language": true },
+              label ? [textSpec(`${key}:language:text`, label)] : [],
+            ),
+            elementSpec(
+              `${key}:copy-slot`,
+              "span",
+              { "data-smoothstream-code-copy-slot": true },
+              copyButton ? [copyButton] : [],
+            ),
+          ],
+        ),
+        ...rendered.children,
+      ],
+    ),
+    ...(copyValue !== undefined ? { codeCopyValue: copyValue } : {}),
+  };
 };
 
 const tableShell = (
@@ -1026,10 +1114,12 @@ const transformNode = (
     node.tagName === "pre" &&
     typeof properties["data-smoothstream-code-label"] === "string"
   ) {
+    const copyReady = properties["data-smoothstream-code-copy-ready"] === true;
     return [enhancedCodeBlock(
       rendered,
       properties["data-smoothstream-code-label"],
-      properties["data-smoothstream-code-copy-ready"] === true,
+      copyReady,
+      copyReady ? canonicalCodeValue(node) : undefined,
     )];
   }
   return node.tagName === "table" ? [tableShell(rendered, node, path)] : [rendered];

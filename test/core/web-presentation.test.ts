@@ -32,6 +32,7 @@ interface ProjectionOptions {
   readonly codeHighlights?: WebPresentationState["codeHighlights"];
   readonly compactedBlockIds?: ReadonlySet<string>;
   readonly compactedUnitIds?: WebPresentationState["compactedUnitIds"];
+  readonly confirmedBlockIds?: ReadonlySet<string>;
   readonly images?: ReadonlyMap<string, ImageReadiness>;
   readonly immediate?: boolean;
   readonly now?: number;
@@ -42,12 +43,13 @@ interface ProjectionOptions {
 const fixture = (
   source: string,
   reveal: MarkdownReveal = "character",
+  inputOpen = false,
 ): WebFixture => {
   const session = new StreamingSession(new ManualClock(), {
     duration: 100,
     interval: 10,
   });
-  const input = session.prepareInput(source, false, reveal);
+  const input = session.prepareInput(source, inputOpen, reveal);
   return { input, schedules: session.schedule(input).schedules };
 };
 
@@ -59,6 +61,7 @@ const project = (
   codeHighlights: options.codeHighlights ?? new Map(),
   compactedBlockIds: options.compactedBlockIds ?? new Set(),
   compactedUnitIds: options.compactedUnitIds ?? new Set(),
+  confirmedBlockIds: options.confirmedBlockIds ?? value.input.plan.confirmedBlockIds,
   images: options.images ?? new Map(),
   immediate: options.immediate ?? false,
   now: options.now ?? 100,
@@ -146,6 +149,7 @@ describe("web presentation model", () => {
       codeHighlights: new Map(),
       compactedBlockIds: presentation.compactedBlockIds,
       compactedUnitIds: presentation.compactedUnitIds,
+      confirmedBlockIds: input.plan.confirmedBlockIds,
       images: new Map(),
       immediate: true,
       now: presentation.now,
@@ -167,7 +171,7 @@ describe("web presentation model", () => {
     expect(keys.every((key) => key.length > 0)).toBe(true);
     expect(new Set(keys).size).toBe(keys.length);
     expect(codeBlock?.tagName).toBe("pre");
-    expect(copyButton?.properties.disabled).toBe(false);
+    expect(copyButton?.properties.disabled).toBeUndefined();
     expect(image?.properties.src).toBe("/preview.png");
     expect(image?.properties["data-smoothstream-image"]).toBeUndefined();
     expect(rendered.some((node) =>
@@ -268,7 +272,7 @@ describe("web presentation model", () => {
     )[0];
     expect(plainPre).toBeDefined();
     expect(plainToolbar).toBeDefined();
-    expect(plainCopy?.properties.disabled).toBe(false);
+    expect(plainCopy?.properties.disabled).toBeUndefined();
     expect(elementsWith(plain, "data-smoothstream-code-token"))
       .toHaveLength(0);
 
@@ -313,6 +317,134 @@ describe("web presentation model", () => {
       .toBe(true);
     expect(token?.properties.style).toEqual({ color: "#c00000" });
     expect(content(highlighted)).toContain("const ready = true;");
+  });
+
+  it("fades the enhanced code shell once with its complete language title", () => {
+    const value = fixture("```ts\nconst ready = true;\n```");
+    const request = value.input.codeBlocks[0];
+    const firstLine = value.input.plan.units.find(
+      (unit) => unit.kind === "code-line",
+    );
+    expect(request).toBeDefined();
+    expect(firstLine).toBeDefined();
+    if (!request || !firstLine) return;
+    const schedule = value.schedules.get(firstLine.id);
+    expect(schedule).toBeDefined();
+    if (!schedule) return;
+    const highlight = resolveCodeHighlight(request, {
+      languageLabel: "TypeScript",
+      lines: request.lines.map((line) => ({ tokens: [{ content: line }] })),
+    });
+    const projectionOptions = {
+      codeHighlighterEnabled: true,
+      codeHighlights: new Map([[request.blockStart, highlight]]),
+    };
+
+    const active = project(value, {
+      ...projectionOptions,
+      now: schedule.startAt,
+    });
+    const activePre = firstElement(active, "pre");
+    const language = elementsWith(
+      active,
+      "data-smoothstream-code-language",
+      true,
+    )[0];
+
+    expect(activePre?.properties["data-smoothstream-code-enter"])
+      .toBe("active");
+    expect(activePre?.properties["data-smoothstream-code-single-line"])
+      .toBe(true);
+    expect(activePre?.properties["data-smoothstream-animation-start"])
+      .toBe(schedule.startAt);
+    expect(activePre?.properties["data-smoothstream-animation-duration"])
+      .toBe(schedule.duration);
+    expect(activePre?.properties.style).toMatchObject({
+      "--smoothstream-animation-delay": "0ms",
+      "--smoothstream-duration": `${schedule.duration}ms`,
+    });
+    expect(language && textContent(language)).toBe("TypeScript");
+    expect(language && elementsWith([language], "data-smoothstream-unit"))
+      .toHaveLength(0);
+
+    const settled = project(value, {
+      ...projectionOptions,
+      now: schedule.endAt,
+    });
+    const settledPre = firstElement(settled, "pre");
+    expect(settledPre?.key).toBe(activePre?.key);
+    expect(settledPre?.properties["data-smoothstream-code-enter"])
+      .toBeUndefined();
+
+    const immediate = project(value, {
+      ...projectionOptions,
+      immediate: true,
+      now: schedule.startAt,
+    });
+    expect(firstElement(immediate, "pre")?.properties[
+      "data-smoothstream-code-enter"
+    ]).toBeUndefined();
+  });
+
+  it("mounts copy with canonical code only after block confirmation", () => {
+    const open = fixture("```ts\nfirst();\nsecond();\n", "character", true);
+    const pending = project(open, {
+      codeHighlighterEnabled: true,
+      now: 10_000,
+    });
+    const pendingPre = firstElement(pending, "pre");
+    const pendingCopy = elementsWith(
+      pending,
+      "data-smoothstream-code-copy",
+      true,
+    )[0];
+    const pendingCopySlot = elementsWith(
+      pending,
+      "data-smoothstream-code-copy-slot",
+      true,
+    )[0];
+
+    expect(pendingPre?.codeCopyValue).toBeUndefined();
+    expect(pendingCopy).toBeUndefined();
+    expect(pendingCopySlot).toBeDefined();
+
+    const complete = fixture(
+      "```ts\nfirst();\nsecond();\n```",
+      "character",
+      true,
+    );
+    const ready = project(complete, {
+      codeHighlighterEnabled: true,
+      now: 100,
+    });
+    const readyPre = firstElement(ready, "pre");
+    const readyCode = firstElement(ready, "code");
+    const readyCopy = elementsWith(
+      ready,
+      "data-smoothstream-code-copy",
+      true,
+    )[0];
+    const readyCopySlot = elementsWith(
+      ready,
+      "data-smoothstream-code-copy-slot",
+      true,
+    )[0];
+
+    expect(readyCode).toBeDefined();
+    if (!readyCode) return;
+    expect(textContent(readyCode)).not.toBe(
+      "first();\nsecond();\n",
+    );
+    expect(readyPre?.codeCopyValue).toBe("first();\nsecond();");
+    expect(readyPre?.properties["data-smoothstream-code-single-line"])
+      .toBeUndefined();
+    expect(readyPre?.properties).not.toHaveProperty(
+      "data-smoothstream-code-copy-value",
+    );
+    expect(readyCopySlot?.key).toBe(pendingCopySlot?.key);
+    expect(readyCopy).toBeDefined();
+    expect(readyCopySlot?.children).toContain(readyCopy);
+    expect(readyCopy?.properties.disabled).toBeUndefined();
   });
 
   it("selects the hidden-language layout before highlighting and suppresses later labels", () => {

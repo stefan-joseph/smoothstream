@@ -460,6 +460,80 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
       }
     });
 
+    it("mounts enabled canonical copying when streamed code is complete", async () => {
+      const originalClipboard = Object.getOwnPropertyDescriptor(
+        window.navigator,
+        "clipboard",
+      );
+      const writeText = vi.fn(() => Promise.resolve());
+      Object.defineProperty(window.navigator, "clipboard", {
+        configurable: true,
+        value: { writeText },
+      });
+      const highlighter: CodeHighlighter = {
+        highlight: (request) => ({
+          lines: request.code.split("\n").slice(0, -1).map((line: string) => ({
+            tokens: [{ content: line }],
+          })),
+        }),
+        name: "copy-readiness-contract-highlighter",
+      };
+      const open = "```ts\nfirst();\nsecond();\n";
+      const complete = `${open}\`\`\``;
+      const driver = await mount(open, {
+        codeHighlighter: highlighter,
+        receiving: true,
+        reducedMotion: "always",
+      });
+
+      try {
+        const pendingPre = driver.element.querySelector(
+          "pre[data-smoothstream-code-block]",
+        );
+        const pendingSlot = driver.element.querySelector(
+          "[data-smoothstream-code-copy-slot]",
+        );
+        const pending = driver.element.querySelector<HTMLButtonElement>(
+          "[data-smoothstream-code-copy]",
+        );
+        expect(pendingSlot).not.toBeNull();
+        expect(pending).toBeNull();
+
+        await driver.update(complete, { receiving: true });
+        const readyPre = driver.element.querySelector(
+          "pre[data-smoothstream-code-block]",
+        );
+        const readySlot = driver.element.querySelector(
+          "[data-smoothstream-code-copy-slot]",
+        );
+        const ready = driver.element.querySelector<HTMLButtonElement>(
+          "[data-smoothstream-code-copy]",
+        );
+        expect(readyPre).toBe(pendingPre);
+        expect(readySlot).toBe(pendingSlot);
+        expect(ready?.parentElement).toBe(readySlot);
+        expect(ready).toBeVisible();
+        expect(ready).toBeEnabled();
+        expect(ready).toHaveAttribute("data-smoothstream-ready", "true");
+
+        ready?.click();
+        await Promise.resolve();
+        expect(writeText).toHaveBeenCalledWith("first();\nsecond();");
+      } finally {
+        driver.destroy();
+        if (originalClipboard) {
+          Object.defineProperty(
+            window.navigator,
+            "clipboard",
+            originalClipboard,
+          );
+        } else {
+          delete (window.navigator as unknown as Record<string, unknown>)
+            .clipboard;
+        }
+      }
+    });
+
     it("hides language labels without removing highlighting or the copy control", async () => {
       const highlighter: CodeHighlighter = {
         highlight: () => ({
@@ -480,6 +554,7 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
           "pre[data-smoothstream-code-block]",
         );
         expect(pre).toHaveAttribute("data-smoothstream-code-language-hidden");
+        expect(pre).toHaveAttribute("data-smoothstream-code-single-line");
         expect(pre).toHaveAttribute("data-smoothstream-code-label", "");
         expect(pre?.querySelector("[data-smoothstream-code-language]"))
           .toBeEmptyDOMElement();

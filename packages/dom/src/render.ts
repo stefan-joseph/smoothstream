@@ -15,6 +15,7 @@ const domNodeKeys = new WeakMap<Node, string>();
 const presentationCaches = new WeakMap<HTMLElement, WebPresentationCache>();
 const appliedAttributes = new WeakMap<Element, ReadonlyMap<string, string>>();
 const appliedStyles = new WeakMap<HTMLElement, ReadonlyMap<string, string>>();
+const codeCopyValues = new WeakMap<Element, string>();
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 const cssPropertyName = (property: string): string =>
@@ -122,6 +123,11 @@ const reconcileNode = (node: Node, spec: DomSpec): void => {
     if (node.nodeValue !== spec.value) node.nodeValue = spec.value;
     return;
   }
+  if (spec.codeCopyValue === undefined) {
+    codeCopyValues.delete(node as Element);
+  } else {
+    codeCopyValues.set(node as Element, spec.codeCopyValue);
+  }
   applyProperties(node as Element, spec.properties);
   reconcileChildren(node as Element, spec.children);
 };
@@ -179,3 +185,6 @@ export const renderDom = (
   }
   reconcileChildren(root, createWebPresentation({ ...state, cache }));
 };
+
+export const codeCopyValueFor = (element: Element): string | undefined =>
+  codeCopyValues.get(element);

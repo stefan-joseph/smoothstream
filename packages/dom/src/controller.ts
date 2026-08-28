@@ -12,7 +12,7 @@ import {
   type StreamingInputSnapshot,
   type StreamingPlaybackSnapshot,
 } from "@smoothstream/core";
-import { renderDom } from "./render";
+import { codeCopyValueFor, renderDom } from "./render";
 import type {
   SmoothstreamController,
   SmoothstreamMode,
@@ -296,6 +296,7 @@ class DomStreamingController implements SmoothstreamController {
       codeHighlights: this.#codeHighlights,
       compactedBlockIds: presentation.compactedBlockIds,
       compactedUnitIds: presentation.compactedUnitIds,
+      confirmedBlockIds: input.plan.confirmedBlockIds,
       images: this.#imageReadiness,
       immediate: this.#presentationImmediate(),
       now,
@@ -485,8 +486,9 @@ class DomStreamingController implements SmoothstreamController {
 
   async #copyCodeBlock(button: HTMLButtonElement): Promise<void> {
     const pre = button.closest("pre[data-smoothstream-code-block]");
-    const code = pre?.querySelector("code")?.textContent;
-    if (!pre || code === null || code === undefined) return;
+    if (!pre) return;
+    const code = codeCopyValueFor(pre);
+    if (code === undefined) return;
 
     try {
       if (this.#view.navigator.clipboard?.writeText) {

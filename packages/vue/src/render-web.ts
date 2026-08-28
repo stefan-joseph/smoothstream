@@ -73,20 +73,6 @@ const vueElementProperties = (
   return result;
 };
 
-const textContent = (node: WebRenderNode): string =>
-  node.type === "text"
-    ? node.value
-    : node.children.map(textContent).join("");
-
-const codeBlockValue = (node: WebElementNode): string => {
-  const code = node.children.find(
-    (child): child is WebElementNode =>
-      child.type === "element" && child.tagName === "code",
-  );
-  const value = code ? textContent(code) : "";
-  return value.endsWith("\n") ? value.slice(0, -1) : value;
-};
-
 const writeClipboardText = async (
   button: HTMLButtonElement,
   value: string,
@@ -173,7 +159,7 @@ const WebCodeBlock = defineComponent({
     };
 
     watch(
-      () => codeBlockValue(props.node),
+      () => props.node.codeCopyValue,
       () => {
         copied.value = false;
         clearResetTimer();
@@ -188,7 +174,8 @@ const WebCodeBlock = defineComponent({
       }
       const button = event.currentTarget as HTMLButtonElement | null;
       if (!button || button.localName !== "button") return;
-      const code = codeBlockValue(props.node);
+      const code = props.node.codeCopyValue;
+      if (code === undefined) return;
       void writeClipboardText(button, code).then(
         () => {
           copied.value = true;

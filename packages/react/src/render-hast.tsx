@@ -157,20 +157,6 @@ const reactElementProperties = (
   return result;
 };
 
-const textContent = (node: WebRenderNode): string =>
-  node.type === "text"
-    ? node.value
-    : node.children.map(textContent).join("");
-
-const codeBlockValue = (node: WebElementNode): string => {
-  const code = node.children.find(
-    (child): child is WebElementNode =>
-      child.type === "element" && child.tagName === "code",
-  );
-  const value = code ? textContent(code) : "";
-  return value.endsWith("\n") ? value.slice(0, -1) : value;
-};
-
 const webChildrenToReact = (
   children: ReadonlyArray<WebRenderNode>,
   filterTableWhitespace: boolean,
@@ -216,9 +202,9 @@ interface WebCodeBlockProps {
 }
 
 const WebCodeBlock = ({ node }: WebCodeBlockProps): ReactNode => {
-  const code = codeBlockValue(node);
+  const code = node.codeCopyValue;
   const copyReady = node.properties["data-smoothstream-code-copy-ready"] ===
-    true;
+      true && code !== undefined;
   const [copied, setCopied] = useState(false);
   const resetTimerRef = useRef<number | undefined>(undefined);
 
@@ -237,7 +223,7 @@ const WebCodeBlock = ({ node }: WebCodeBlockProps): ReactNode => {
   }, []);
 
   const copy = (): void => {
-    if (!copyReady) return;
+    if (!copyReady || code === undefined) return;
     void writeClipboardText(code).then(
       () => {
         setCopied(true);
@@ -495,6 +481,7 @@ interface HastBlockProps {
   readonly codeHighlights: ReadonlyMap<number, ResolvedCodeHighlight>;
   readonly compactedBlockIds: ReadonlySet<string> | undefined;
   readonly compactedUnitIds: WebCompactedUnitLookup;
+  readonly confirmedBlockIds: ReadonlySet<string>;
   readonly images: ReadonlyMap<string, ImageReadiness>;
   readonly immediate: boolean;
   readonly now: number;
@@ -511,6 +498,7 @@ const HastBlock = ({
   codeHighlights,
   compactedBlockIds,
   compactedUnitIds,
+  confirmedBlockIds,
   images,
   immediate,
   now,
@@ -524,6 +512,7 @@ const HastBlock = ({
     codeHighlights,
     compactedBlockIds: compactedBlockIds ?? EMPTY_BLOCK_IDS,
     compactedUnitIds,
+    confirmedBlockIds,
     images,
     immediate,
     now,
@@ -557,6 +546,7 @@ export const renderHast = (
   immediate = false,
   codeHighlighterEnabled = false,
   showLanguageLabels = true,
+  confirmedBlockIds: ReadonlySet<string> = EMPTY_BLOCK_IDS,
 ): ReactNode => {
   const blocks = prepareRenderBlocks(tree, units, cache);
   const timings = prepareBlockTimings(tree, blocks, schedules, cache);
@@ -568,6 +558,7 @@ export const renderHast = (
       codeHighlights,
       compactedBlockIds,
       compactedUnitIds,
+      confirmedBlockIds,
       images,
       immediate,
       key: block.key,
@@ -583,7 +574,9 @@ export const renderHast = (
         images,
         visibleUnitCount,
         codeHighlightRevision,
-      ) + `|${reveal}|${immediate}|${codeHighlighterEnabled}|${showLanguageLabels}`,
+      ) + `|${block.blockIds.map((blockId) =>
+        confirmedBlockIds.has(blockId) ? "1" : "0"
+      ).join("")}|${reveal}|${immediate}|${codeHighlighterEnabled}|${showLanguageLabels}`,
       schedules,
       showLanguageLabels,
     })

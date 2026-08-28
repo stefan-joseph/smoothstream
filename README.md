@@ -331,10 +331,11 @@ back to ordinary unhighlighted code rather than blocking playback.
 
 Attaching the code adapter also opts fenced blocks into Smoothstream's enhanced code
 surface. It shows Shiki's canonical language name (or the original fence label
-for an unknown language) and adds a copy button. Copy remains hidden and
-unfocusable until the closing fence is known and the entire block has finished
-revealing, then copies only the raw code. Without the optional adapter, fenced
-code remains ordinary `<pre><code>` markup with no toolbar.
+for an unknown language) and adds a copy button. Once the closing fence is
+known, the control mounts enabled and fades in. It copies the complete raw code
+even if the visual reveal is still running. While the fence can still grow, no
+copy control is rendered. Without the optional adapter, fenced code remains
+ordinary `<pre><code>` markup with no toolbar.
 
 ## Styling
 

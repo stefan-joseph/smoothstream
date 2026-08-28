@@ -374,7 +374,7 @@ describe("createSmoothstream", () => {
 
     initialButton?.click();
     await vi.waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith("const ready = true;\n");
+      expect(writeText).toHaveBeenCalledWith("const ready = true;");
     });
 
     resolveHighlight?.({
@@ -420,7 +420,7 @@ describe("createSmoothstream", () => {
     writeText.mockClear();
     button?.click();
     await vi.waitFor(() => {
-      expect(writeText).toHaveBeenCalledWith("const ready = true;\n");
+      expect(writeText).toHaveBeenCalledWith("const ready = true;");
     });
     expect(button).toHaveAttribute("aria-label", "Code copied");
     expect(button?.querySelector("[data-smoothstream-code-icon-swap]"))

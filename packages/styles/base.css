@@ -64,6 +64,23 @@
   }
 }
 
+@keyframes smoothstream-code-copy-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes smoothstream-code-block-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 [data-smoothstream-mode="streaming"][data-smoothstream-motion="animate"] {
   font-kerning: none;
 }
@@ -117,17 +134,10 @@
 }
 
 [data-smoothstream-code-copy] {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--smoothstream-duration, 400ms)
-    cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-[data-smoothstream-code-copy][data-smoothstream-ready="true"] {
-  visibility: visible;
   opacity: 1;
-  pointer-events: auto;
+  animation: smoothstream-code-copy-in
+    var(--smoothstream-code-copy-enter-duration, 400ms)
+    cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 /*
@@ -155,6 +165,11 @@ pre[data-smoothstream-code-block] {
   font-size: inherit;
 }
 
+pre[data-smoothstream-code-block][data-smoothstream-code-enter="active"] {
+  animation: smoothstream-code-block-in var(--smoothstream-duration, 400ms)
+    cubic-bezier(0.22, 1, 0.36, 1) var(--smoothstream-animation-delay, 0ms) both;
+}
+
 [data-smoothstream-code-toolbar] {
   display: flex;
   align-items: center;
@@ -173,6 +188,15 @@ pre[data-smoothstream-code-block] {
   white-space: nowrap;
 }
 
+[data-smoothstream-code-copy-slot] {
+  display: grid;
+  inline-size: var(--smoothstream-code-copy-button-size, max(1.75rem, 1.75em));
+  block-size: var(--smoothstream-code-copy-button-size, max(1.75rem, 1.75em));
+  flex: 0 0 auto;
+  place-items: center;
+  pointer-events: none;
+}
+
 [data-smoothstream-code-copy] {
   display: grid;
   inline-size: var(--smoothstream-code-copy-button-size, max(1.75rem, 1.75em));
@@ -186,6 +210,7 @@ pre[data-smoothstream-code-block] {
   color: inherit;
   cursor: pointer;
   font: inherit;
+  pointer-events: auto;
 }
 
 pre[data-smoothstream-code-block] > code {
@@ -214,14 +239,24 @@ pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden]
   pointer-events: none;
 }
 
+pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden][data-smoothstream-code-single-line]
+  [data-smoothstream-code-toolbar] {
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+}
+
 pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden]
   [data-smoothstream-code-language] {
   display: none;
 }
 
 pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden]
-  [data-smoothstream-code-copy] {
+  [data-smoothstream-code-copy-slot] {
   margin-inline-end: 0;
+}
+
+pre[data-smoothstream-code-block][data-smoothstream-code-language-hidden]
+  [data-smoothstream-code-copy] {
   border-radius: var(--smoothstream-code-copy-border-radius, 0.375rem);
   background-color: var(
     --smoothstream-code-copy-background,

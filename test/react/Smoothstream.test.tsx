@@ -1038,10 +1038,17 @@ describe("Smoothstream", () => {
     const copyButton = container.querySelector(
       "[data-smoothstream-code-copy]",
     );
-    expect(copyButton).toBeDisabled();
-    expect(copyButton).toHaveAttribute("aria-hidden", "true");
+    expect(copyButton).toBeEnabled();
+    expect(copyButton).toHaveAttribute("data-smoothstream-ready", "true");
+    expect(copyButton).not.toHaveAttribute("aria-hidden");
     expect(firstToken).toHaveStyle({ color: "rgb(0, 0, 255)" });
     expect(firstToken).toHaveTextContent("c");
+
+    await act(async () => {
+      fireEvent.click(copyButton as Element);
+      await Promise.resolve();
+    });
+    expect(writeText).toHaveBeenCalledWith("const ready = true;");
 
     await act(async () => {
       now = 1_000;

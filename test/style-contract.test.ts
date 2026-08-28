@@ -30,9 +30,13 @@ describe("stylesheet contract", () => {
       /\[data-smoothstream-kind="block"\] \{[\s\S]*?transform-origin: center;[\s\S]*?var\(--smoothstream-duration, 1200ms\)[\s\S]*?cubic-bezier\(0\.16, 1, 0\.3, 1\)/,
     );
     expect(css).toContain("prefers-reduced-motion: reduce");
+    expect(css).toContain("[data-smoothstream-code-copy-slot]");
+    expect(css).toMatch(
+      /\[data-smoothstream-code-copy-slot\] \{[\s\S]*?--smoothstream-code-copy-button-size,[\s\S]*?max\(1\.75rem, 1\.75em\)[\s\S]*?pointer-events: none;/,
+    );
     expect(css).toContain("[data-smoothstream-code-copy]");
     expect(css).toMatch(
-      /\[data-smoothstream-code-copy\] \{[\s\S]*?--smoothstream-code-copy-button-size,[\s\S]*?max\(1\.75rem, 1\.75em\)/,
+      /\[data-smoothstream-code-copy\] \{[\s\S]*?--smoothstream-code-copy-button-size,[\s\S]*?max\(1\.75rem, 1\.75em\)[\s\S]*?pointer-events: auto;/,
     );
     expect(css).toContain("pre[data-smoothstream-code-block]");
     expect(css).toContain("[data-smoothstream-code-toolbar]");
@@ -52,6 +56,9 @@ describe("stylesheet contract", () => {
       /data-smoothstream-code-language-hidden[\s\S]*?\[data-smoothstream-code-toolbar\] \{[\s\S]*?position: absolute;[\s\S]*?pointer-events: none;/,
     );
     expect(css).toMatch(
+      /data-smoothstream-code-language-hidden\]\[data-smoothstream-code-single-line\][\s\S]*?\[data-smoothstream-code-toolbar\] \{[\s\S]*?inset-block-start: 50%;[\s\S]*?transform: translateY\(-50%\);/,
+    );
+    expect(css).toMatch(
       /data-smoothstream-code-language-hidden[\s\S]*?\[data-smoothstream-code-copy\] \{[\s\S]*?background-color:[\s\S]*?backdrop-filter: blur/,
     );
     expect(css).toMatch(
@@ -66,7 +73,12 @@ describe("stylesheet contract", () => {
       /\[data-smoothstream-code-icon\] \{[\s\S]*?inline-size: var\(--smoothstream-code-copy-icon-size, max\(14px, 1em\)\);[\s\S]*?block-size: var\(--smoothstream-code-copy-icon-size, max\(14px, 1em\)\);/,
     );
     expect(css).toContain("--smoothstream-icon-swap-duration");
-    expect(css).toContain('[data-smoothstream-ready="true"]');
+    expect(css).toContain("@keyframes smoothstream-code-block-in");
+    expect(css).toMatch(
+      /pre\[data-smoothstream-code-block\]\[data-smoothstream-code-enter="active"\] \{[\s\S]*?animation: smoothstream-code-block-in var\(--smoothstream-duration, 400ms\)[\s\S]*?var\(--smoothstream-animation-delay, 0ms\) both;/,
+    );
+    expect(css).toContain("@keyframes smoothstream-code-copy-in");
+    expect(css).toContain("--smoothstream-code-copy-enter-duration, 400ms");
     expect(css).toContain("[data-smoothstream-table-shell]");
     expect(css).toContain("[data-smoothstream-table-scroll]");
     expect(css).toContain("width: fit-content");
@@ -109,6 +121,9 @@ describe("stylesheet contract", () => {
     expect(css).toContain("--smoothstream-inline-code-color");
     expect(css).toContain("--smoothstream-code-background");
     expect(css).toContain("--smoothstream-code-padding-inline: 1rem");
+    expect(css).toContain(
+      "--smoothstream-code-hidden-padding-block: 0.725em",
+    );
     expect(css).toContain("--smoothstream-code-margin-block: 0.75em");
     expect(css).toContain("--smoothstream-p-margin-block-start: 0");
     expect(css).toContain("--smoothstream-p-margin-block-end: 1em");
@@ -254,10 +269,13 @@ describe("stylesheet contract", () => {
       /\[data-smoothstream-code-toolbar\][\s\S]*?padding: 0\.55rem var\(--smoothstream-code-padding-inline\) 0;/,
     );
     expect(css).toMatch(
-      /\[data-smoothstream-code-copy\][\s\S]*?margin-inline-end: calc\([\s\S]*?var\(--smoothstream-code-copy-icon-size, max\(14px, 1em\)\)[\s\S]*?var\([\s\S]*?--smoothstream-code-copy-button-size,[\s\S]*?max\(1\.75rem, 1\.75em\)/,
+      /\[data-smoothstream-code-copy-slot\][\s\S]*?margin-inline-end: calc\([\s\S]*?var\(--smoothstream-code-copy-icon-size, max\(14px, 1em\)\)[\s\S]*?var\([\s\S]*?--smoothstream-code-copy-button-size,[\s\S]*?max\(1\.75rem, 1\.75em\)/,
     );
     expect(css).toMatch(
       /\[data-smoothstream-code-block\] > code[\s\S]*?padding: 0\.55em var\(--smoothstream-code-padding-inline\) 0\.9em;/,
+    );
+    expect(css).toMatch(
+      /data-smoothstream-code-language-hidden\][\s\S]*?> code[\s\S]*?padding-block: var\(--smoothstream-code-hidden-padding-block\);/,
     );
     expect(css).toMatch(
       /\[data-smoothstream-code-icon-swap\]\[data-state="copy"\][\s\S]*?opacity: 0\.65;/,

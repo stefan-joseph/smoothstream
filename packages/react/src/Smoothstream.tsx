@@ -206,6 +206,7 @@ const SmoothstreamPlayback = memo(({
     presentationImmediate,
     codeHighlighter !== undefined,
     codeHighlighter?.showLanguageLabels !== false,
+    plan.confirmedBlockIds,
   );
 
   useAnimationPhase(rootRef);

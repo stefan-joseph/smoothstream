@@ -391,6 +391,10 @@ const pausedCode: ReadonlyArray<StreamDelivery> = [
 
 const codeLanguages = `# Syntax languages
 
+\`\`\`sh
+npm i @smoothstream/react
+\`\`\`
+
 ## TypeScript
 
 \`\`\`ts

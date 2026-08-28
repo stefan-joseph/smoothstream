@@ -647,6 +647,7 @@ export const Smoothstream = defineComponent({
         codeHighlights: codeHighlights.value,
         compactedBlockIds: presentation.compactedBlockIds,
         compactedUnitIds: presentation.compactedUnitIds,
+        confirmedBlockIds: input.plan.confirmedBlockIds,
         images: imageReadiness.value,
         immediate: presentationImmediate(),
         now,

@@ -1,6 +1,6 @@
 {
   "name": "@smoothstream/styles",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Shared reveal mechanics and default prose theme for Smoothstream web adapters",
   "license": "MIT",
   "keywords": [
