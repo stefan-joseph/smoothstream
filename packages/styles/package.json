@@ -1,7 +1,16 @@
 {
   "name": "@smoothstream/styles",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Shared reveal mechanics and default prose theme for Smoothstream web adapters",
+  "homepage": "https://smoothstream.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
+    "directory": "packages/styles"
+  },
+  "bugs": {
+    "url": "https://github.com/stefan-joseph/smoothstream/issues"
+  },
   "license": "MIT",
   "keywords": [
     "markdown",
@@ -24,14 +33,5 @@
   },
   "engines": {
     "node": ">=20"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
-    "directory": "packages/styles"
-  },
-  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/styles",
-  "bugs": {
-    "url": "https://github.com/stefan-joseph/smoothstream/issues"
   }
 }

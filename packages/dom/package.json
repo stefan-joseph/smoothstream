@@ -1,7 +1,16 @@
 {
   "name": "@smoothstream/dom",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Deterministic, paced Markdown reveal for the browser DOM",
+  "homepage": "https://smoothstream.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
+    "directory": "packages/dom"
+  },
+  "bugs": {
+    "url": "https://github.com/stefan-joseph/smoothstream/issues"
+  },
   "license": "MIT",
   "keywords": [
     "javascript",
@@ -38,14 +47,5 @@
     "@smoothstream/core": "^0.1.3",
     "@smoothstream/styles": "^0.1.4",
     "property-information": "^7.2.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
-    "directory": "packages/dom"
-  },
-  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/dom",
-  "bugs": {
-    "url": "https://github.com/stefan-joseph/smoothstream/issues"
   }
 }

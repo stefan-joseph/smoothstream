@@ -2,6 +2,8 @@
 
 Optional Shiki syntax highlighting for Smoothstream renderers.
 
+[Documentation](https://smoothstream.ai/docs/customize/syntax-highlighting)
+
 ```sh
 npm install @smoothstream/react @smoothstream/code
 # or

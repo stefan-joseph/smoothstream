@@ -1,7 +1,16 @@
 {
   "name": "@smoothstream/code",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Optional Shiki syntax highlighting for Smoothstream",
+  "homepage": "https://smoothstream.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
+    "directory": "packages/code"
+  },
+  "bugs": {
+    "url": "https://github.com/stefan-joseph/smoothstream/issues"
+  },
   "license": "MIT",
   "keywords": [
     "shiki",
@@ -35,14 +44,5 @@
   "dependencies": {
     "@shikijs/stream": "^4.4.2",
     "shiki": "^4.4.2"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
-    "directory": "packages/code"
-  },
-  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/code",
-  "bugs": {
-    "url": "https://github.com/stefan-joseph/smoothstream/issues"
   }
 }

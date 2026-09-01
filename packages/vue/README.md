@@ -2,6 +2,8 @@
 
 Deterministic, paced streaming Markdown for Vue 3 and Nuxt.
 
+[Documentation](https://smoothstream.ai/docs/adapters/vue)
+
 ```sh
 npm install @smoothstream/vue vue
 ```

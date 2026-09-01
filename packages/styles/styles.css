@@ -421,10 +421,6 @@
       var(--smoothstream-code-default-background)
     )
   );
-  color: var(
-    --smoothstream-code-color,
-    var(--smoothstream-shiki-color, var(--smoothstream-code-default-color))
-  );
   scrollbar-color: var(
       --smoothstream-code-scrollbar-color,
       color-mix(in srgb, currentColor 24%, transparent)
@@ -462,7 +458,10 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: inherit;
+  color: var(
+    --smoothstream-code-color,
+    var(--smoothstream-shiki-color, var(--smoothstream-code-default-color))
+  );
   font-size: var(--smoothstream-code-font-size);
   font-weight: inherit;
   line-height: 1.7;

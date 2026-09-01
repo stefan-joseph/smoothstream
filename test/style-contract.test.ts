@@ -48,8 +48,12 @@ describe("stylesheet contract", () => {
     expect(css).toMatch(
       /pre\[data-smoothstream-code-block\] \{[\s\S]*?font-family: inherit;[\s\S]*?font-size: inherit;/,
     );
+    const enhancedPreRule = css.match(
+      /pre\[data-smoothstream-code-block\] \{([\s\S]*?)\n\}/,
+    )?.[1];
+    expect(enhancedPreRule).not.toContain("--smoothstream-shiki-color");
     expect(css).toMatch(
-      /pre\[data-smoothstream-code-block\] > code \{[\s\S]*?overflow-x: auto;/,
+      /pre\[data-smoothstream-code-block\] > code \{[\s\S]*?overflow-x: auto;[\s\S]*?--smoothstream-code-color,[\s\S]*?--smoothstream-shiki-color,[\s\S]*?--smoothstream-code-default-color, inherit/,
     );
     expect(css).toContain("data-smoothstream-code-language-hidden");
     expect(css).toMatch(
@@ -263,6 +267,13 @@ describe("stylesheet contract", () => {
     expect(css).toContain("--smoothstream-code-scrollbar-hover-color");
     expect(css).toContain("--smoothstream-shiki-background");
     expect(css).toContain("--smoothstream-shiki-color");
+    const defaultPreRule = css.match(
+      /:where\(\[data-smoothstream-theme="default"\] pre\) \{([\s\S]*?)\n\}/,
+    )?.[1];
+    expect(defaultPreRule).not.toContain("--smoothstream-shiki-color");
+    expect(css).toMatch(
+      /theme="default"\] pre code\) \{[\s\S]*?--smoothstream-code-color,[\s\S]*?--smoothstream-shiki-color,[\s\S]*?--smoothstream-code-default-color/,
+    );
     expect(css).toContain("[data-smoothstream-code-toolbar]");
     expect(css).toContain("[data-smoothstream-code-language]");
     expect(css).toMatch(

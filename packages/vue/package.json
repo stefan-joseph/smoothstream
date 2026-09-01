@@ -1,7 +1,16 @@
 {
   "name": "@smoothstream/vue",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Deterministic, paced Markdown reveal for Vue 3",
+  "homepage": "https://smoothstream.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
+    "directory": "packages/vue"
+  },
+  "bugs": {
+    "url": "https://github.com/stefan-joseph/smoothstream/issues"
+  },
   "license": "MIT",
   "keywords": [
     "vue",
@@ -41,14 +50,5 @@
     "@smoothstream/core": "^0.1.3",
     "@smoothstream/styles": "^0.1.4",
     "property-information": "^7.2.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/stefan-joseph/smoothstream.git",
-    "directory": "packages/vue"
-  },
-  "homepage": "https://github.com/stefan-joseph/smoothstream/tree/main/packages/vue",
-  "bugs": {
-    "url": "https://github.com/stefan-joseph/smoothstream/issues"
   }
 }

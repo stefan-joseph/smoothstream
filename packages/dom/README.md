@@ -2,6 +2,8 @@
 
 Deterministic, paced streaming Markdown for the browser DOM.
 
+[Documentation](https://smoothstream.ai/docs/adapters/vanilla)
+
 ```sh
 npm install @smoothstream/dom
 ```

@@ -2,6 +2,8 @@
 
 Deterministic, paced streaming Markdown for React.
 
+[Documentation](https://smoothstream.ai/docs/adapters/react)
+
 ```sh
 npm install @smoothstream/react
 ```
