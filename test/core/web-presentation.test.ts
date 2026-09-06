@@ -518,8 +518,8 @@ describe("web presentation model", () => {
     expect(readyImage?.key).toBe(pendingImage?.key);
     expect(readyImage?.properties["data-smoothstream-image"]).toBe("ready");
     expect(readyImage?.properties["data-smoothstream-state"]).toBe("settled");
-    expect(readyImage?.properties.width).toBe(24);
-    expect(readyImage?.properties.height).toBe(24);
+    expect(readyImage?.properties.width).toBeUndefined();
+    expect(readyImage?.properties.height).toBeUndefined();
     expect(content(ready)).toContain("after.");
 
     const failed = project(value, {
@@ -535,6 +535,42 @@ describe("web presentation model", () => {
     expect(failedImage?.properties.width).toBeUndefined();
     expect(failedImage?.properties.height).toBeUndefined();
     expect(content(failed)).toContain("after.");
+  });
+
+  it("keeps dimensionless SVG layout browser-controlled before and after compaction", () => {
+    const value = fixture(
+      "![Checkout latency chart](/image-responsive.svg)",
+    );
+    const imageUnit = value.input.plan.units.find(
+      (unit) => unit.kind === "image",
+    );
+    expect(imageUnit).toBeDefined();
+    if (!imageUnit) return;
+
+    const images = new Map<string, ImageReadiness>([[imageUnit.id, {
+      // A detached SVG preloader can report a fallback box even when the
+      // rendered image is widened by its containing layout.
+      height: 150,
+      readyAt: 100,
+      status: "ready",
+      width: 300,
+    }]]);
+    const readyImage = firstElement(project(value, {
+      images,
+      now: 150,
+    }), "img");
+    const compactedImage = firstElement(project(value, {
+      compactedUnitIds: new Set([imageUnit.id]),
+      images,
+      now: 10_000,
+    }), "img");
+
+    expect(readyImage?.properties.src).toBe("/image-responsive.svg");
+    expect(readyImage?.properties["data-smoothstream-image"]).toBe("ready");
+    expect(readyImage?.properties.width).toBeUndefined();
+    expect(readyImage?.properties.height).toBeUndefined();
+    expect(compactedImage?.properties.width).toBeUndefined();
+    expect(compactedImage?.properties.height).toBeUndefined();
   });
 
   it("marks standalone images and keeps linked images inert until their reveal settles", () => {

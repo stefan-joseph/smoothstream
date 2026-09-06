@@ -1143,7 +1143,7 @@ describe("Smoothstream", () => {
     )).toBe("#ffffff");
   });
 
-  it("lets a late standalone image take its natural layout without a height animation", async () => {
+  it("keeps a dimensionless SVG browser-sized through a late decode and settlement", async () => {
     vi.useFakeTimers();
     let now = 0;
     vi.spyOn(performance, "now").mockImplementation(() => now);
@@ -1207,8 +1207,8 @@ describe("Smoothstream", () => {
       throw new Error("Expected the image preload request to exist.");
     }
     request.complete = true;
-    request.naturalWidth = 640;
-    request.naturalHeight = 360;
+    request.naturalWidth = 300;
+    request.naturalHeight = 150;
     await act(async () => {
       now = 200;
       request.onload?.();
@@ -1237,8 +1237,8 @@ describe("Smoothstream", () => {
     expect(image).toHaveAttribute("data-smoothstream-image", "ready");
     expect(image).not.toHaveAttribute("data-smoothstream-image-layout");
     expect(image).toHaveAttribute("data-smoothstream-animation-start", "200");
-    expect(image).toHaveAttribute("width", "640");
-    expect(image).toHaveAttribute("height", "360");
+    expect(image).not.toHaveAttribute("width");
+    expect(image).not.toHaveAttribute("height");
     expect(image).toHaveAttribute("decoding", "async");
     expect(image.parentElement?.style.height).toBe("");
     expect(image.parentElement?.style.overflow).toBe("");
@@ -1448,7 +1448,7 @@ describe("Smoothstream", () => {
     );
   });
 
-  it("reveals an image that was ready before its turn at full layout height", async () => {
+  it("reveals a ready image without overriding browser-controlled geometry", async () => {
     vi.useFakeTimers();
     let now = 0;
     vi.spyOn(performance, "now").mockImplementation(() => now);
@@ -1510,8 +1510,8 @@ describe("Smoothstream", () => {
     expect(image).toHaveAttribute("data-smoothstream-kind", "image");
     expect(image).toHaveAttribute("data-smoothstream-animation-start", "30");
     expect(image).not.toHaveAttribute("data-smoothstream-image-layout");
-    expect(image).toHaveAttribute("width", "640");
-    expect(image).toHaveAttribute("height", "360");
+    expect(image).not.toHaveAttribute("width");
+    expect(image).not.toHaveAttribute("height");
     expect(layoutAnimations).toHaveLength(0);
   });
 

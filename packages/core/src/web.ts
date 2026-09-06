@@ -870,10 +870,10 @@ const transformImage = (
     ...baseProperties,
     decoding: "async",
   };
-  if (readiness.status === "ready") {
-    if (readiness.width !== undefined) properties.width = readiness.width;
-    if (readiness.height !== undefined) properties.height = readiness.height;
-  }
+  // Readiness measurements belong to the detached preloader, not the rendered
+  // image's layout. Projecting them as HTML attributes can override consumer
+  // CSS and pin dimensionless SVGs to a detached fallback size until this unit
+  // compacts. Preserve only dimensions authored on the original node.
   properties["data-smoothstream-image"] = readiness.status;
   return [elementSpec(
     nodeKey(node, path),

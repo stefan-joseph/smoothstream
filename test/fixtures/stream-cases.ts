@@ -773,6 +773,14 @@ const standaloneImage = `A standalone image should enter as one decoded unit:
 
 Text after the image keeps its own reveal schedule.`;
 
+const responsiveSvgImage = `# Responsive SVG settlement
+
+The chart below has a \`viewBox\` but no authored \`width\` or \`height\`. It should enter at the browser-controlled responsive width and keep exactly that geometry after its reveal settles:
+
+![Checkout latency falling after a rollback](/image-responsive.svg)
+
+This paragraph should not move when Smoothstream removes the image's temporary reveal metadata.`;
+
 const delayedImage: ReadonlyArray<StreamDelivery> = [
   {
     delayMs: 250,
@@ -1096,6 +1104,11 @@ export const streamCases: ReadonlyArray<StreamCase> = [
     id: "image-standalone",
     label: "Image: standalone",
     deliveries: chunkMarkdown(standaloneImage),
+  },
+  {
+    id: "image-responsive-svg",
+    label: "Image: responsive SVG settlement",
+    deliveries: chunkMarkdown(responsiveSvgImage),
   },
   {
     id: "image-delayed-load",
