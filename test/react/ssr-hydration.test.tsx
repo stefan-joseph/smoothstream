@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { act } from "@testing-library/react";
-import type { ReactElement } from "react";
+import type { ComponentPropsWithoutRef, ReactElement } from "react";
 import { hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -47,6 +47,38 @@ afterEach(() => {
 });
 
 describe("Smoothstream SSR hydration", () => {
+  it("server-renders and hydrates React component overrides in place", async () => {
+    const Heading = ({ children, ...props }: ComponentPropsWithoutRef<"h2">) => (
+      <h2 {...props} data-custom-heading>{children}</h2>
+    );
+    const components = { h2: Heading } as const;
+    const element = (
+      <Smoothstream components={components} mode="static">
+        {"## Customized"}
+      </Smoothstream>
+    );
+    const serverHtml = renderWithoutWindow(element);
+
+    expect(serverHtml).toContain("data-custom-heading");
+    const container = document.createElement("div");
+    container.innerHTML = serverHtml;
+    document.body.append(container);
+    const serverHeading = container.querySelector("[data-custom-heading]");
+    const recoverableErrors: unknown[] = [];
+    let root: Root | undefined;
+
+    await act(async () => {
+      root = hydrateRoot(container, element, {
+        onRecoverableError: (error) => recoverableErrors.push(error),
+      });
+      await Promise.resolve();
+    });
+
+    expect(recoverableErrors.map(String)).toEqual([]);
+    expect(container.querySelector("[data-custom-heading]")).toBe(serverHeading);
+    await act(async () => root?.unmount());
+  });
+
   it("server-renders static Markdown before resolving system motion", async () => {
     vi.stubGlobal("matchMedia", matchMedia(true));
     const source = "Previously **completed** Markdown.";

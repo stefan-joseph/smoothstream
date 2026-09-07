@@ -59,6 +59,7 @@ interface SmoothstreamPlaybackProps extends Omit<SmoothstreamProps, "children"> 
 const SmoothstreamPlayback = memo(({
   className,
   codeHighlighter,
+  components,
   duration,
   receiving = false,
   interval,
@@ -207,6 +208,7 @@ const SmoothstreamPlayback = memo(({
     codeHighlighter !== undefined,
     codeHighlighter?.showLanguageLabels !== false,
     plan.confirmedBlockIds,
+    components,
   );
 
   useAnimationPhase(rootRef);

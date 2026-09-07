@@ -122,6 +122,81 @@ const scheduleAllTogether = (
 );
 
 describe("web presentation model", () => {
+  it("identifies supported Markdown elements without exposing renderer internals", () => {
+    const value = fixture([
+      "# One",
+      "## Two",
+      "### Three",
+      "#### Four",
+      "##### Five",
+      "###### Six",
+      "",
+      "A **strong** *emphasized* ~~deleted~~ [link](/docs) with `inline code`.  ",
+      "Next line.",
+      "",
+      "> Quoted",
+      "",
+      "- Unordered",
+      "- [x] Task",
+      "",
+      "1. Ordered",
+      "",
+      "| Name | Value |",
+      "| --- | --- |",
+      "| Ready | Yes |",
+      "",
+      "![Preview](/preview.png)",
+      "",
+      "---",
+      "",
+      "```ts",
+      "const ready = true;",
+      "```",
+    ].join("\n"));
+    const nodes = project(value, { immediate: true, now: 10_000 });
+    const rendered = elements(nodes);
+    const names = new Set(rendered.flatMap((node) =>
+      node.markdownElement ? [node.markdownElement] : []
+    ));
+
+    expect([...names].sort()).toEqual([
+      "a",
+      "blockquote",
+      "br",
+      "del",
+      "em",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "hr",
+      "img",
+      "inlineCode",
+      "li",
+      "ol",
+      "p",
+      "strong",
+      "table",
+      "tbody",
+      "td",
+      "th",
+      "thead",
+      "tr",
+      "ul",
+    ]);
+    expect(rendered.find((node) => node.tagName === "pre")?.markdownElement)
+      .toBeUndefined();
+    expect(rendered.filter((node) => node.tagName === "code").map((node) =>
+      node.markdownElement
+    )).toEqual(["inlineCode", undefined]);
+    expect(rendered.find((node) => node.tagName === "input")?.markdownElement)
+      .toBeUndefined();
+    expect(elementsWith(nodes, "data-smoothstream-table-shell")[0]
+      ?.markdownElement).toBeUndefined();
+  });
+
   it("creates keyed static HTML structure without an adapter runtime", () => {
     const clock = new ManualClock(0);
     const session = new StreamingSession(clock, {
@@ -498,6 +573,7 @@ describe("web presentation model", () => {
 
     const pending = project(value, { now: 10_000 });
     const pendingImage = firstElement(pending, "img");
+    expect(pendingImage?.markdownElement).toBe("img");
     expect(pendingImage?.properties["data-smoothstream-image"]).toBe("pending");
     expect(pendingImage?.properties["aria-hidden"]).toBe(true);
     expect(pendingImage?.properties["data-smoothstream-image-standalone"])
@@ -515,6 +591,7 @@ describe("web presentation model", () => {
       now: 10_000,
     });
     const readyImage = firstElement(ready, "img");
+    expect(readyImage?.markdownElement).toBe("img");
     expect(readyImage?.key).toBe(pendingImage?.key);
     expect(readyImage?.properties["data-smoothstream-image"]).toBe("ready");
     expect(readyImage?.properties["data-smoothstream-state"]).toBe("settled");
@@ -615,6 +692,7 @@ describe("web presentation model", () => {
       schedules,
     });
     const activeLink = firstElement(active, "a");
+    expect(activeLink?.markdownElement).toBe("a");
     expect(activeLink?.properties.href).toBeUndefined();
     expect(activeLink?.properties["aria-disabled"]).toBe(true);
     expect(activeLink?.properties.tabIndex).toBe(-1);
@@ -625,6 +703,7 @@ describe("web presentation model", () => {
       schedules,
     });
     const settledLink = firstElement(settled, "a");
+    expect(settledLink?.markdownElement).toBe("a");
     expect(settledLink?.key).toBe(activeLink?.key);
     expect(settledLink?.properties.href).toBe("https://example.com");
     expect(settledLink?.properties["aria-disabled"]).toBeUndefined();
@@ -666,6 +745,7 @@ describe("web presentation model", () => {
       (node) => node.tagName === "tr",
     );
     expect(activeRows).toHaveLength(3);
+    expect(activeRows.every((row) => row.markdownElement === "tr")).toBe(true);
     expect(activeRows[0]?.properties["data-smoothstream-kind"])
       .toBe("table-row");
     expect(activeRows[0]?.properties["data-smoothstream-state"])
@@ -707,6 +787,7 @@ describe("web presentation model", () => {
     expect(content(compacted)).toContain("Second");
     expect(elementsWith(compacted, "data-smoothstream-table-shell", true))
       .toHaveLength(1);
+    expect(firstElement(compacted, "table")?.markdownElement).toBe("table");
   });
 
   it("keeps all surviving record keys stable and unique across updates", () => {

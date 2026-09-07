@@ -120,6 +120,41 @@ The integration stays small:
 
 The renderer needs the Markdown accumulated so far. Smoothstream handles the buffering, parsing, scheduling, and transition choreography internally.`;
 
+const componentOverrides: ReadonlyArray<StreamDelivery> = [
+  {
+    delayMs: 250,
+    text: "## Components supplied by your appli",
+  },
+  {
+    delayMs: 500,
+    text: "cation\n\nThis heading is a custom component. Read [component documentation](",
+  },
+  {
+    delayMs: 650,
+    text: "https://example.com/component",
+  },
+  {
+    delayMs: 500,
+    text: "s) and run `npm install",
+  },
+  {
+    delayMs: 650,
+    text: "`.\n\n> This blockquote is rendered by an application component while",
+  },
+  {
+    delayMs: 650,
+    text: " Smoothstream still controls parsing, stabilization, and reveal timing.\n\n```tsx\nconst fencedCodeRemainsSmoothstreamOwned",
+  },
+  {
+    delayMs: 500,
+    text: " = true;\n",
+  },
+  {
+    delayMs: 500,
+    text: "```\n\nThis final paragraph uses the default renderer, proving overridden and native elements can coexist.\n",
+  },
+];
+
 const proseWithLists = `# Reading a longer answer
 
 When a response is mostly prose, the eye needs consecutive paragraphs to sit closer than the breaks around headings. The first stretch of this answer is three paragraphs on purpose, so that stack is visible before any other block appears.
@@ -909,6 +944,11 @@ export const streamCases: ReadonlyArray<StreamCase> = [
     id: "showcase",
     label: "Showcase",
     deliveries: chunkMarkdown(showcase),
+  },
+  {
+    id: "component-overrides",
+    label: "Components: overrides",
+    deliveries: componentOverrides,
   },
   {
     id: "prose-with-lists",

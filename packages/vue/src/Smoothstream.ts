@@ -38,6 +38,7 @@ import {
 import { webNodesToVue } from "./render-web";
 import type {
   SmoothstreamMode,
+  SmoothstreamComponents,
   SmoothstreamReducedMotion,
   SmoothstreamReveal,
 } from "./types";
@@ -91,6 +92,7 @@ export const Smoothstream = defineComponent({
   inheritAttrs: false,
   props: {
     codeHighlighter: Object as PropType<CodeHighlighter | undefined>,
+    components: Object as PropType<SmoothstreamComponents | undefined>,
     duration: {
       default: 1_000,
       type: Number,
@@ -656,7 +658,7 @@ export const Smoothstream = defineComponent({
         showLanguageLabels: props.codeHighlighter?.showLanguageLabels !== false,
         tree: input.plan.tree,
         units: input.plan.units,
-      }));
+      }), props.components);
     };
 
     return () => {

@@ -5,6 +5,9 @@ import "@smoothstream/styles/styles.css";
 
 export { Smoothstream } from "./Smoothstream";
 export type {
+  SmoothstreamComponentName,
+  SmoothstreamComponentProps,
+  SmoothstreamComponents,
   SmoothstreamMode,
   SmoothstreamProps,
   SmoothstreamReducedMotion,

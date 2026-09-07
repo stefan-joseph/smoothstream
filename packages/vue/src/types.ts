@@ -1,12 +1,20 @@
 import type { CodeHighlighter, MarkdownReveal } from "@smoothstream/core";
+import type { MarkdownComponentName } from "@smoothstream/core/web";
+import type { Component } from "vue";
 
 export type SmoothstreamMode = "streaming" | "static";
 export type SmoothstreamReducedMotion = "system" | "always" | "never";
 export type SmoothstreamReveal = MarkdownReveal;
+export type SmoothstreamComponentName = MarkdownComponentName;
+export type SmoothstreamComponents = Partial<
+  Record<SmoothstreamComponentName, Component>
+>;
 
 export interface SmoothstreamProps {
   /** Optional syntax highlighter for fenced code blocks. */
   codeHighlighter?: CodeHighlighter;
+  /** Vue component overrides for semantic elements originating in Markdown. */
+  components?: SmoothstreamComponents;
   /** Milliseconds spent animating each revealed character or word. @default 1000 */
   duration?: number;
   /** Base cadence in milliseconds; word mode preserves it while grouping characters. @default 3 */

@@ -83,6 +83,33 @@ This same component works in Vue SSR and Nuxt. `mode="static"` emits settled
 semantic HTML on the server and hydrates that markup in place; browser-owned
 enhancements such as asynchronous syntax highlighting begin after mount.
 
+## Component overrides
+
+React and Vue can replace semantic elements produced by Markdown without
+changing Smoothstream's parsing or reveal plan. Both adapters use the same
+override names and accept components native to their framework:
+
+```tsx
+import type { SmoothstreamComponents } from "@smoothstream/react";
+
+const components: SmoothstreamComponents = {
+  h2: ({ children, ...props }) => <h2 {...props}>{children}</h2>,
+  a: ({ children, ...props }) => <a {...props}>{children}</a>,
+  inlineCode: ({ children, ...props }) => (
+    <code {...props}>{children}</code>
+  ),
+};
+
+<Smoothstream components={components}>{markdown}</Smoothstream>
+```
+
+Supported names are `h1`–`h6`, `p`, `strong`, `em`, `del`, `ul`, `ol`, `li`,
+`a`, `inlineCode`, `blockquote`, `table`, `thead`, `tbody`, `tr`, `th`, `td`,
+`img`, `hr`, and `br`. Fenced code, task checkboxes, and Smoothstream's internal
+presentation elements are not override targets. Forward supplied children and
+element properties to preserve reveal, safety, layout, and accessibility
+behavior.
+
 ## Vanilla DOM usage
 
 The DOM adapter creates one managed root inside a container and exposes an

@@ -1,6 +1,7 @@
 import type { Root, RootContent } from "hast";
 import {
   createElement,
+  type ElementType,
   memo,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -25,6 +26,7 @@ import {
   type WebPresentationCache,
   type WebRenderNode,
 } from "@smoothstream/core/web";
+import type { SmoothstreamComponents } from "./types";
 
 interface HastRenderBlock {
   readonly blockIds: ReadonlyArray<string>;
@@ -160,6 +162,7 @@ const reactElementProperties = (
 const webChildrenToReact = (
   children: ReadonlyArray<WebRenderNode>,
   filterTableWhitespace: boolean,
+  components: SmoothstreamComponents | undefined,
   copyContext?: CopyContext,
 ): ReactNode[] => children.flatMap((child) => {
   if (
@@ -169,11 +172,12 @@ const webChildrenToReact = (
   ) {
     return [];
   }
-  return [webNodeToReact(child, copyContext)];
+  return [webNodeToReact(child, components, copyContext)];
 });
 
 const webElementToReact = (
   node: WebElementNode,
+  components: SmoothstreamComponents | undefined,
   copyContext?: CopyContext,
 ): ReactNode => {
   const properties = reactElementProperties(node);
@@ -189,19 +193,25 @@ const webElementToReact = (
   const children = webChildrenToReact(
     node.children,
     tableContainers.has(node.tagName),
+    components,
     copyContext,
   );
-  return createElement(node.tagName, {
+  const override = node.markdownElement
+    ? components?.[node.markdownElement]
+    : undefined;
+  const component: ElementType = override ?? node.tagName as ElementType;
+  return createElement(component, {
     ...properties,
     key: node.key,
   }, ...children);
 };
 
 interface WebCodeBlockProps {
+  readonly components: SmoothstreamComponents | undefined;
   readonly node: WebElementNode;
 }
 
-const WebCodeBlock = ({ node }: WebCodeBlockProps): ReactNode => {
+const WebCodeBlock = ({ components, node }: WebCodeBlockProps): ReactNode => {
   const code = node.codeCopyValue;
   const copyReady = node.properties["data-smoothstream-code-copy-ready"] ===
       true && code !== undefined;
@@ -239,11 +249,12 @@ const WebCodeBlock = ({ node }: WebCodeBlockProps): ReactNode => {
     );
   };
 
-  return webElementToReact(node, { copied, copy });
+  return webElementToReact(node, components, { copied, copy });
 };
 
 const webNodeToReact = (
   node: WebRenderNode,
+  components: SmoothstreamComponents | undefined,
   copyContext?: CopyContext,
 ): ReactNode => {
   if (node.type === "text") return node.value;
@@ -252,9 +263,13 @@ const webNodeToReact = (
     node.tagName === "pre" &&
     node.properties["data-smoothstream-code-block"] === true
   ) {
-    return createElement(WebCodeBlock, { key: node.key, node });
+    return createElement(WebCodeBlock, {
+      components,
+      key: node.key,
+      node,
+    });
   }
-  return webElementToReact(node, copyContext);
+  return webElementToReact(node, components, copyContext);
 };
 
 const rootContentRange = (node: RootContent): SourceRange | undefined => {
@@ -479,6 +494,7 @@ interface HastBlockProps {
   readonly cache: HastRenderCache;
   readonly codeHighlighterEnabled: boolean;
   readonly codeHighlights: ReadonlyMap<number, ResolvedCodeHighlight>;
+  readonly components: SmoothstreamComponents | undefined;
   readonly compactedBlockIds: ReadonlySet<string> | undefined;
   readonly compactedUnitIds: WebCompactedUnitLookup;
   readonly confirmedBlockIds: ReadonlySet<string>;
@@ -496,6 +512,7 @@ const HastBlock = ({
   cache,
   codeHighlighterEnabled,
   codeHighlights,
+  components,
   compactedBlockIds,
   compactedUnitIds,
   confirmedBlockIds,
@@ -522,12 +539,14 @@ const HastBlock = ({
     tree: { type: "root", children: [block.node] },
     units: block.units,
   });
-  return nodes.map((node) => webNodeToReact(node));
+  return nodes.map((node) => webNodeToReact(node, components));
 };
 
 const MemoizedHastBlock = memo(
   HastBlock,
-  (previous, next) => previous.revision === next.revision,
+  (previous, next) =>
+    previous.revision === next.revision &&
+    previous.components === next.components,
 );
 
 export const renderHast = (
@@ -547,6 +566,7 @@ export const renderHast = (
   codeHighlighterEnabled = false,
   showLanguageLabels = true,
   confirmedBlockIds: ReadonlySet<string> = EMPTY_BLOCK_IDS,
+  components?: SmoothstreamComponents,
 ): ReactNode => {
   const blocks = prepareRenderBlocks(tree, units, cache);
   const timings = prepareBlockTimings(tree, blocks, schedules, cache);
@@ -556,6 +576,7 @@ export const renderHast = (
       cache,
       codeHighlighterEnabled,
       codeHighlights,
+      components,
       compactedBlockIds,
       compactedUnitIds,
       confirmedBlockIds,

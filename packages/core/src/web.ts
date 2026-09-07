@@ -27,6 +27,34 @@ import type { ScheduledUnit } from "./types";
 
 export type WebProperties = Readonly<Record<string, unknown>>;
 
+/** Markdown-originated elements that framework adapters may replace. */
+export type MarkdownComponentName =
+  | "a"
+  | "blockquote"
+  | "br"
+  | "del"
+  | "em"
+  | "h1"
+  | "h2"
+  | "h3"
+  | "h4"
+  | "h5"
+  | "h6"
+  | "hr"
+  | "img"
+  | "inlineCode"
+  | "li"
+  | "ol"
+  | "p"
+  | "strong"
+  | "table"
+  | "tbody"
+  | "td"
+  | "th"
+  | "thead"
+  | "tr"
+  | "ul";
+
 export interface WebTextNode {
   readonly key: string;
   readonly type: "text";
@@ -38,6 +66,8 @@ export interface WebElementNode {
   /** Complete source copied by an enhanced code block; never rendered as an attribute. */
   readonly codeCopyValue?: string;
   readonly key: string;
+  /** Adapter override key when this element originated in authored Markdown. */
+  readonly markdownElement?: MarkdownComponentName;
   readonly namespace?: "svg";
   readonly properties: WebProperties;
   readonly tagName: string;
@@ -105,6 +135,32 @@ const PRUNABLE_CONTAINERS = new Set([
   "thead", "ul",
 ]);
 const INLINE_GROUP_TAGS = new Set(["a", "code", "del", "em", "strong"]);
+const MARKDOWN_COMPONENT_TAGS = new Set<MarkdownComponentName>([
+  "a",
+  "blockquote",
+  "br",
+  "del",
+  "em",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "hr",
+  "img",
+  "li",
+  "ol",
+  "p",
+  "strong",
+  "table",
+  "tbody",
+  "td",
+  "th",
+  "thead",
+  "tr",
+  "ul",
+]);
 
 const textSpec = (key: string, value: string): WebTextNode => ({
   key,
@@ -151,6 +207,35 @@ const canonicalCodeValue = (node: HastElement): string => {
 
 const nodeKey = (node: HastElement | Text, path: string): string =>
   `${node.type}:${node.type === "element" ? node.tagName : "text"}:${node.position?.start.offset ?? path}:${path}`;
+
+const markdownElementFor = (
+  node: HastElement,
+  insidePre: boolean,
+): MarkdownComponentName | undefined => {
+  if (node.tagName === "code") {
+    return insidePre ? undefined : "inlineCode";
+  }
+  return MARKDOWN_COMPONENT_TAGS.has(node.tagName as MarkdownComponentName)
+    ? node.tagName as MarkdownComponentName
+    : undefined;
+};
+
+const markdownElementSpec = (
+  node: HastElement,
+  path: string,
+  properties: WebProperties,
+  children: ReadonlyArray<WebRenderNode>,
+  insidePre: boolean,
+): WebElementNode => {
+  const rendered = elementSpec(
+    nodeKey(node, path),
+    node.tagName,
+    properties,
+    children,
+  );
+  const markdownElement = markdownElementFor(node, insidePre);
+  return markdownElement ? { ...rendered, markdownElement } : rendered;
+};
 
 const isVisible = (schedule: ScheduledUnit, now: number): boolean =>
   schedule.startAt <= now;
@@ -813,13 +898,24 @@ const tableShell = (
   )],
 );
 
-const rawNode = (node: ElementContent, path: string): WebRenderNode[] => {
+const rawNode = (
+  node: ElementContent,
+  path: string,
+  insidePre = false,
+): WebRenderNode[] => {
   if (node.type === "text") return [textSpec(`${nodeKey(node, path)}:raw`, node.value)];
   if (node.type !== "element") return [];
+  const childrenInsidePre = insidePre || node.tagName === "pre";
   const children = node.children.flatMap((child, index) =>
-    rawNode(child, `${path}.${index}`)
+    rawNode(child, `${path}.${index}`, childrenInsidePre)
   );
-  const rendered = elementSpec(nodeKey(node, path), node.tagName, node.properties, children);
+  const rendered = markdownElementSpec(
+    node,
+    path,
+    node.properties,
+    children,
+    insidePre,
+  );
   return node.tagName === "table" ? [tableShell(rendered, node, path)] : [rendered];
 };
 
@@ -835,13 +931,13 @@ const transformImage = (
     ...(standalone ? { "data-smoothstream-image-standalone": true } : {}),
   };
   if (state.immediate) {
-    return [elementSpec(nodeKey(node, path), "img", baseProperties, [])];
+    return [markdownElementSpec(node, path, baseProperties, [], false)];
   }
 
   const readiness = state.images.get(schedule.id);
   if (!readiness) {
     if (!isVisible(schedule, state.now)) return [];
-    return [elementSpec(nodeKey(node, path), "img", {
+    return [markdownElementSpec(node, path, {
       ...baseProperties,
       "aria-hidden": true,
       "data-smoothstream-image": "pending",
@@ -852,7 +948,7 @@ const transformImage = (
         ...(standalone ? { display: "block" } : {}),
         visibility: "hidden",
       }),
-    }, [])];
+    }, [], false)];
   }
   const effectiveSchedule: ScheduledUnit = {
     ...schedule,
@@ -864,7 +960,7 @@ const transformImage = (
     state.compactedUnitIds.has(schedule.id) &&
     state.now >= effectiveSchedule.endAt
   ) {
-    return [elementSpec(nodeKey(node, path), "img", baseProperties, [])];
+    return [markdownElementSpec(node, path, baseProperties, [], false)];
   }
   const properties: Record<string, unknown> = {
     ...baseProperties,
@@ -875,13 +971,14 @@ const transformImage = (
   // CSS and pin dimensionless SVGs to a detached fallback size until this unit
   // compacts. Preserve only dimensions authored on the original node.
   properties["data-smoothstream-image"] = readiness.status;
-  return [elementSpec(
-    nodeKey(node, path),
-    "img",
+  return [markdownElementSpec(
+    node,
+    path,
     isAnimating(effectiveSchedule, state.now)
       ? activeWebProperties(properties, effectiveSchedule, "image", state.now)
       : retainedWebProperties(properties, effectiveSchedule),
     [],
+    false,
   )];
 };
 
@@ -970,25 +1067,27 @@ const transformNode = (
   if (kind && schedule && !isVisible(schedule, state.now)) {
     if (kind === "table-row") {
       const children = node.children.flatMap((child, index) =>
-        rawNode(child, `${path}.${index}`)
+        rawNode(child, `${path}.${index}`, insidePre)
       );
-      return [elementSpec(nodeKey(node, path), node.tagName, {
+      return [markdownElementSpec(node, path, {
         ...node.properties,
         "aria-hidden": true,
         "data-smoothstream-state": "pending",
         "data-smoothstream-unit": schedule.id,
         style: styleWith(node.properties.style, { visibility: "collapse" }),
-      }, children)];
+      }, children, insidePre)];
     }
     if (
       retainPendingText &&
       (kind === "inline" || kind === "link") &&
       INLINE_GROUP_TAGS.has(node.tagName)
     ) {
-      return [elementSpec(nodeKey(node, path), node.tagName, {
+      return [markdownElementSpec(node, path, {
         ...node.properties,
         ...pendingWebProperties(schedule),
-      }, node.children.flatMap((child, index) => rawNode(child, `${path}.${index}`)))];
+      }, node.children.flatMap((child, index) =>
+        rawNode(child, `${path}.${index}`, insidePre)
+      ), insidePre)];
     }
     return [];
   }
@@ -998,7 +1097,7 @@ const transformNode = (
     state.compactedUnitIds.has(schedule.id) &&
     !(kind === "link" && !inlineContentIsSettled(node, state, schedule))
   ) {
-    return rawNode(node, path);
+    return rawNode(node, path, insidePre);
   }
 
   const nextInsidePre = insidePre || node.tagName === "pre";
@@ -1109,7 +1208,13 @@ const transformNode = (
     };
   }
   properties = codeBlockWebProperties(node, state, properties);
-  const rendered = elementSpec(nodeKey(node, path), node.tagName, properties, children);
+  const rendered = markdownElementSpec(
+    node,
+    path,
+    properties,
+    children,
+    insidePre,
+  );
   if (
     node.tagName === "pre" &&
     typeof properties["data-smoothstream-code-label"] === "string"

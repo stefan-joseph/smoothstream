@@ -46,6 +46,68 @@ afterEach(() => {
 });
 
 describe("Smoothstream Vue", () => {
+  it("renders Markdown elements through Vue component overrides", () => {
+    const override = (tagName: string, marker: string) => defineComponent({
+      inheritAttrs: false,
+      setup: (_, { attrs, slots }) => () => h(
+        tagName,
+        { ...attrs, [`data-${marker}`]: true },
+        slots.default?.(),
+      ),
+    });
+    const view = mountSmoothstream({
+      components: {
+        a: override("a", "custom-link"),
+        h2: override("h2", "custom-heading"),
+        inlineCode: override("code", "custom-inline-code"),
+        table: override("table", "custom-table"),
+      },
+      markdown: [
+        "## Customized",
+        "",
+        "Open [the docs](/docs) and use `npm install`.",
+        "",
+        "| State | Value |",
+        "| --- | --- |",
+        "| Ready | Yes |",
+      ].join("\n"),
+      mode: "static",
+    });
+
+    expect(view.element.querySelector("[data-custom-heading]"))
+      .toHaveTextContent("Customized");
+    expect(view.element.querySelector("[data-custom-link]"))
+      .toHaveAttribute("href", "/docs");
+    expect(view.element.querySelector("[data-custom-inline-code]"))
+      .toHaveTextContent("npm install");
+    expect(view.element.querySelector("[data-smoothstream-table-shell]"))
+      .toContainElement(view.element.querySelector("[data-custom-table]"));
+
+    view.app.unmount();
+  });
+
+  it("keeps fenced code outside Vue component overrides", () => {
+    const InlineCode = defineComponent({
+      inheritAttrs: false,
+      setup: (_, { attrs, slots }) => () => h(
+        "code",
+        { ...attrs, "data-custom-inline-code": true },
+        slots.default?.(),
+      ),
+    });
+    const view = mountSmoothstream({
+      components: { inlineCode: InlineCode },
+      markdown: "Use `inline();`.\n\n```ts\nblock();\n```",
+      mode: "static",
+    });
+
+    expect(view.element.querySelectorAll("[data-custom-inline-code]"))
+      .toHaveLength(1);
+    expect(view.element.querySelector("pre code")).toHaveTextContent("block();");
+
+    view.app.unmount();
+  });
+
   it("uses the markdown prop and forwards Vue attributes to its root", () => {
     const view = mountSmoothstream({
       "aria-label": "Assistant response",

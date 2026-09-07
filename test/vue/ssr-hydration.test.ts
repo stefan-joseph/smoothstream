@@ -55,6 +55,39 @@ afterEach(() => {
 });
 
 describe("Smoothstream Vue SSR hydration", () => {
+  it("server-renders and hydrates Vue component overrides in place", async () => {
+    const Heading = defineComponent({
+      inheritAttrs: false,
+      setup: (_, { attrs, slots }) => () => h(
+        "h2",
+        { ...attrs, "data-custom-heading": true },
+        slots.default?.(),
+      ),
+    });
+    const component = host({
+      components: { h2: Heading },
+      markdown: "## Customized",
+      mode: "static",
+    });
+    const serverHtml = await renderWithoutWindow(createSSRApp(component));
+
+    expect(serverHtml).toContain("data-custom-heading");
+    const container = document.createElement("div");
+    container.innerHTML = serverHtml;
+    document.body.append(container);
+    const serverHeading = container.querySelector("[data-custom-heading]");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const app = createSSRApp(component);
+    app.mount(container);
+    await nextTick();
+
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(consoleWarn).not.toHaveBeenCalled();
+    expect(container.querySelector("[data-custom-heading]")).toBe(serverHeading);
+    app.unmount();
+  });
+
   it("server-renders static Markdown and hydrates the identical semantic tree", async () => {
     vi.stubGlobal("matchMedia", matchMedia(true));
     const source = [

@@ -1,13 +1,31 @@
 import type { CodeHighlighter, MarkdownReveal } from "@smoothstream/core";
+import type { MarkdownComponentName } from "@smoothstream/core/web";
+import type {
+  ComponentPropsWithoutRef,
+  ComponentType,
+} from "react";
 
 export type SmoothstreamMode = "streaming" | "static";
 export type SmoothstreamReducedMotion = "system" | "always" | "never";
 export type SmoothstreamReveal = MarkdownReveal;
+export type SmoothstreamComponentName = MarkdownComponentName;
+
+export type SmoothstreamComponentProps<
+  Name extends SmoothstreamComponentName,
+> = ComponentPropsWithoutRef<Name extends "inlineCode" ? "code" : Name>;
+
+export type SmoothstreamComponents = {
+  [Name in SmoothstreamComponentName]?: ComponentType<
+    SmoothstreamComponentProps<Name>
+  >;
+};
 
 export interface SmoothstreamProps {
   /** Accumulated Markdown snapshot to present. */
   children?: string;
   className?: string;
+  /** React component overrides for semantic elements originating in Markdown. */
+  components?: SmoothstreamComponents;
   /** Optional syntax highlighter for fenced code blocks. */
   codeHighlighter?: CodeHighlighter;
   /** Milliseconds spent animating each revealed character or word. @default 1000 */

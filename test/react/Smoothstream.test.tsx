@@ -43,6 +43,95 @@ afterEach(() => {
 });
 
 describe("Smoothstream", () => {
+  it("renders Markdown elements through React component overrides", () => {
+    const Heading = ({ children, ...props }: ComponentProps<"h2">) => (
+      <h2 {...props} data-custom-heading>{children}</h2>
+    );
+    const Link = ({ children, ...props }: ComponentProps<"a">) => (
+      <a {...props} data-custom-link>{children}</a>
+    );
+    const InlineCode = ({ children, ...props }: ComponentProps<"code">) => (
+      <code {...props} data-custom-inline-code>{children}</code>
+    );
+    const Table = ({ children, ...props }: ComponentProps<"table">) => (
+      <table {...props} data-custom-table>{children}</table>
+    );
+    const components = {
+      a: Link,
+      h2: Heading,
+      inlineCode: InlineCode,
+      table: Table,
+    } as const;
+    const { container } = render(
+      <Smoothstream components={components} mode="static">
+        {[
+          "## Customized",
+          "",
+          "Open [the docs](/docs) and use `npm install`.",
+          "",
+          "| State | Value |",
+          "| --- | --- |",
+          "| Ready | Yes |",
+        ].join("\n")}
+      </Smoothstream>,
+    );
+
+    expect(container.querySelector("[data-custom-heading]")).toHaveTextContent(
+      "Customized",
+    );
+    expect(container.querySelector("[data-custom-link]")).toHaveAttribute(
+      "href",
+      "/docs",
+    );
+    expect(container.querySelector("[data-custom-inline-code]"))
+      .toHaveTextContent("npm install");
+    expect(container.querySelector("[data-smoothstream-table-shell]"))
+      .toContainElement(container.querySelector("[data-custom-table]"));
+  });
+
+  it("keeps fenced code and renderer internals outside component overrides", () => {
+    const InlineCode = ({ children, ...props }: ComponentProps<"code">) => (
+      <code {...props} data-custom-inline-code>{children}</code>
+    );
+    const { container } = render(
+      <Smoothstream components={{ inlineCode: InlineCode }} mode="static">
+        {"Use `inline();`.\n\n```ts\nblock();\n```"}
+      </Smoothstream>,
+    );
+
+    expect(container.querySelectorAll("[data-custom-inline-code]"))
+      .toHaveLength(1);
+    expect(container.querySelector("pre code")).toHaveTextContent("block();");
+  });
+
+  it("honors a changed component map without rebuilding the session", () => {
+    const First = ({ children, ...props }: ComponentProps<"p">) => (
+      <p {...props} data-component="first">{children}</p>
+    );
+    const Second = ({ children, ...props }: ComponentProps<"p">) => (
+      <p {...props} data-component="second">{children}</p>
+    );
+    const view = render(
+      <Smoothstream components={{ p: First }} mode="static">
+        {"Stable content."}
+      </Smoothstream>,
+    );
+
+    expect(view.container.querySelector("p")).toHaveAttribute(
+      "data-component",
+      "first",
+    );
+    view.rerender(
+      <Smoothstream components={{ p: Second }} mode="static">
+        {"Stable content."}
+      </Smoothstream>,
+    );
+    expect(view.container.querySelector("p")).toHaveAttribute(
+      "data-component",
+      "second",
+    );
+  });
+
   it("applies the default theme unless an instance opts out", () => {
     const view = render(
       <Smoothstream reducedMotion="always">{"A themed response."}</Smoothstream>,

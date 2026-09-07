@@ -38,4 +38,23 @@ Set `receiving` to `false` when no more Markdown will arrive. Use static mode
 when mounting content that was already complete, and give a different response
 a new React `key`.
 
+Override semantic elements produced by Markdown with React components:
+
+```tsx
+import type { SmoothstreamComponents } from "@smoothstream/react";
+
+const components: SmoothstreamComponents = {
+  a: ({ children, ...props }) => <a {...props}>{children}</a>,
+  inlineCode: ({ children, ...props }) => (
+    <code {...props} className="app-inline-code">{children}</code>
+  ),
+};
+
+<Smoothstream components={components}>{markdown}</Smoothstream>
+```
+
+Forward the supplied children and element properties so Smoothstream can retain
+its reveal, safety, layout, and accessibility behavior. Fenced code and
+renderer-owned controls are not component override targets.
+
 Default reveal mechanics and prose styling are loaded automatically.

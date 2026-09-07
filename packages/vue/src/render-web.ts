@@ -9,6 +9,7 @@ import {
   type PropType,
   type VNode,
 } from "vue";
+import type { SmoothstreamComponents } from "./types";
 import type {
   WebElementNode,
   WebProperties,
@@ -101,6 +102,7 @@ const writeClipboardText = async (
 const webChildrenToVue = (
   children: ReadonlyArray<WebRenderNode>,
   filterTableWhitespace: boolean,
+  components: SmoothstreamComponents | undefined,
   copyContext?: CopyContext,
 ): VNode[] => children.flatMap((child) => {
   if (
@@ -110,11 +112,12 @@ const webChildrenToVue = (
   ) {
     return [];
   }
-  return [webNodeToVue(child, copyContext)];
+  return [webNodeToVue(child, components, copyContext)];
 });
 
 const webElementToVue = (
   node: WebElementNode,
+  components: SmoothstreamComponents | undefined,
   copyContext?: CopyContext,
 ): VNode => {
   const properties = vueElementProperties(node);
@@ -128,20 +131,30 @@ const webElementToVue = (
     }
   }
 
-  return h(
-    node.tagName,
-    { ...properties, key: node.key },
-    webChildrenToVue(
-      node.children,
-      tableContainers.has(node.tagName),
-      copyContext,
-    ),
+  const children = webChildrenToVue(
+    node.children,
+    tableContainers.has(node.tagName),
+    components,
+    copyContext,
   );
+  const override = node.markdownElement
+    ? components?.[node.markdownElement]
+    : undefined;
+  return override
+    ? h(
+        override,
+        { ...properties, key: node.key },
+        { default: () => children },
+      )
+    : h(node.tagName, { ...properties, key: node.key }, children);
 };
 
 const WebCodeBlock = defineComponent({
   name: "SmoothstreamCodeBlock",
   props: {
+    components: {
+      type: Object as PropType<SmoothstreamComponents | undefined>,
+    },
     node: {
       required: true,
       type: Object as PropType<WebElementNode>,
@@ -193,7 +206,7 @@ const WebCodeBlock = defineComponent({
       );
     };
 
-    return () => webElementToVue(props.node, {
+    return () => webElementToVue(props.node, props.components, {
       copied: copied.value,
       copy,
     });
@@ -202,6 +215,7 @@ const WebCodeBlock = defineComponent({
 
 const webNodeToVue = (
   node: WebRenderNode,
+  components: SmoothstreamComponents | undefined,
   copyContext?: CopyContext,
 ): VNode => {
   if (node.type === "text") {
@@ -214,13 +228,14 @@ const webNodeToVue = (
     node.tagName === "pre" &&
     node.properties["data-smoothstream-code-block"] === true
   ) {
-    return h(WebCodeBlock, { key: node.key, node });
+    return h(WebCodeBlock, { components, key: node.key, node });
   }
-  return webElementToVue(node, copyContext);
+  return webElementToVue(node, components, copyContext);
 };
 
 export const webNodesToVue = (
   nodes: ReadonlyArray<WebRenderNode>,
-): VNode[] => nodes.map((node) => webNodeToVue(node));
+  components?: SmoothstreamComponents,
+): VNode[] => nodes.map((node) => webNodeToVue(node, components));
 
 export type { WebProperties };
