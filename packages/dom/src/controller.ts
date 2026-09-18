@@ -22,6 +22,7 @@ import type {
 } from "./types";
 
 const COMPLETION_ANNOUNCEMENT = "Content ready.";
+let nextFootnoteInstance = 0;
 
 interface PendingInput {
   readonly receiving: boolean;
@@ -94,6 +95,7 @@ class DomStreamingController implements SmoothstreamController {
     };
     this.#session = new StreamingSession(this.#clock, {
       duration: this.#duration,
+      footnoteIdPrefix: `smoothstream-dom-${++nextFootnoteInstance}-`,
       interval: this.#interval,
     });
 

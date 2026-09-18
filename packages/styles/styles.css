@@ -153,6 +153,8 @@
   --smoothstream-table-border-radius: 0.75rem;
   --smoothstream-table-margin-block: 0.75em;
   --smoothstream-image-margin-block: 1.5em;
+  --smoothstream-footnote-margin-block-start: 1.5em;
+  --smoothstream-footnote-border-color: var(--smoothstream-border-color);
   --smoothstream-table-header-background: color-mix(
     in srgb,
     var(--smoothstream-foreground) 3%,
@@ -277,6 +279,31 @@
 :where([data-smoothstream-theme="default"] ol > li)::marker {
   color: var(--smoothstream-counter-color);
   font-weight: 700;
+}
+
+:where([data-smoothstream-theme="default"] [data-footnotes]) {
+  margin-block-start: var(--smoothstream-footnote-margin-block-start);
+  padding-block-start: 0.75em;
+  border-block-start: 1px solid var(--smoothstream-footnote-border-color);
+  font-size: 0.875em;
+}
+
+:where([data-smoothstream-theme="default"] [data-footnotes] > ol) {
+  margin-block: 0;
+}
+
+:where([data-smoothstream-theme="default"] sup:has(> [data-footnote-ref])) {
+  font-size: 0.75em;
+}
+
+:where([data-smoothstream-theme="default"] [data-footnote-ref]) {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+:where([data-smoothstream-theme="default"] [data-footnote-backref]) {
+  margin-inline-start: 0.25em;
+  text-decoration: none;
 }
 
 :where([data-smoothstream-theme="default"] ul > li)::marker {

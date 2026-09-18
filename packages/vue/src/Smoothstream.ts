@@ -31,11 +31,13 @@ import {
   shallowRef,
   Teleport,
   ref,
+  useId,
   watch,
   type PropType,
   type VNode,
 } from "vue";
 import { webNodesToVue } from "./render-web";
+import { synchronizeInlineCodeReservations } from "../../shared/inline-code-reserve";
 import type {
   SmoothstreamMode,
   SmoothstreamComponents,
@@ -44,6 +46,7 @@ import type {
 } from "./types";
 
 const COMPLETION_ANNOUNCEMENT = "Content ready.";
+let nextClientFootnoteInstance = 0;
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 const PHASE_SELECTOR = "[data-smoothstream-animation-start]";
 const PHASE_PROPERTY = "--smoothstream-animation-delay";
@@ -127,6 +130,7 @@ export const Smoothstream = defineComponent({
     },
   },
   setup(props, { attrs }) {
+    let footnoteIdPrefix = `smoothstream-${useId()}-`;
     const root = ref<HTMLDivElement | null>(null);
     const mounted = ref(false);
     const motionDisabled = ref(props.reducedMotion === "always");
@@ -145,6 +149,7 @@ export const Smoothstream = defineComponent({
 
     let session = new StreamingSession(browserClock, {
       duration: props.duration,
+      footnoteIdPrefix,
       interval: props.interval,
     });
     let presentationCache: WebPresentationCache = createWebPresentationCache();
@@ -440,6 +445,7 @@ export const Smoothstream = defineComponent({
       presentationCache = createWebPresentationCache();
       session = new StreamingSession(browserClock, {
         duration: props.duration,
+        footnoteIdPrefix,
         interval: props.interval,
       });
       requestedSource = props.markdown;
@@ -548,8 +554,25 @@ export const Smoothstream = defineComponent({
       completionAnnouncement.value = COMPLETION_ANNOUNCEMENT;
     };
 
+    const ensureUniqueFootnoteIds = (): void => {
+      const element = root.value;
+      const reference = element?.querySelector<HTMLElement>(
+        "[data-footnote-ref][id]",
+      );
+      if (!element || !reference) return;
+      const duplicate = [...element.ownerDocument.querySelectorAll("[data-footnote-ref][id]")]
+        .some((candidate) =>
+          candidate.id === reference.id && !element.contains(candidate)
+        );
+      if (!duplicate) return;
+      footnoteIdPrefix = `smoothstream-vue-client-${++nextClientFootnoteInstance}-`;
+      resetSession();
+    };
+
     const afterRender = (): void => {
+      ensureUniqueFootnoteIds();
       synchronizeAnimationPhases();
+      if (root.value) synchronizeInlineCodeReservations(root.value);
       publishCompletionIfReady();
     };
 

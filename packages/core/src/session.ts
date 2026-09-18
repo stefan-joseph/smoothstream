@@ -172,8 +172,12 @@ const buildInputSnapshot = (
   source: string,
   inputOpen: boolean,
   reveal: MarkdownReveal,
+  footnoteIdPrefix: string,
 ): StreamingInputSnapshot => {
-  const plan = createMarkdownPlan(parseMarkdown(source), source, {
+  const plan = createMarkdownPlan(parseMarkdown(source, {
+    inputOpen,
+    footnoteIdPrefix,
+  }), source, {
     inputOpen,
     reveal,
   });
@@ -216,14 +220,19 @@ const buildInputSnapshot = (
 export class StreamingSession {
   readonly #clock: Clock;
   readonly #scheduler: RevealScheduler;
+  readonly #footnoteIdPrefix: string;
   #committedSource = "";
   #lastEndAt: number | null = null;
   #scheduledUnits: ReadonlyArray<ScheduledUnit> = [];
   #schedules: ReadonlyMap<string, ScheduledUnit> = new Map();
 
-  constructor(clock: Clock, options: SchedulerOptions) {
+  constructor(
+    clock: Clock,
+    options: SchedulerOptions & { readonly footnoteIdPrefix?: string },
+  ) {
     this.#clock = clock;
     this.#scheduler = new RevealScheduler(clock, options);
+    this.#footnoteIdPrefix = options.footnoteIdPrefix ?? "";
   }
 
   prepareInput(
@@ -232,7 +241,12 @@ export class StreamingSession {
     reveal: MarkdownReveal = "character",
   ): StreamingInputSnapshot {
     this.#assertAppendOnly(source);
-    return buildInputSnapshot(source, inputOpen, reveal);
+    return buildInputSnapshot(
+      source,
+      inputOpen,
+      reveal,
+      this.#footnoteIdPrefix,
+    );
   }
 
   commitInput(input: StreamingInputSnapshot): void {

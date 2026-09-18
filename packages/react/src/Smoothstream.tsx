@@ -5,6 +5,8 @@ import {
   type CSSProperties,
   type ReactElement,
   useEffect,
+  useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -31,9 +33,12 @@ import { useCodeHighlighting } from "./use-code-highlighting";
 import { useCoalescedInput } from "./use-coalesced-input";
 import { useImageReadiness } from "./use-image-readiness";
 import { useReducedMotion } from "./use-reduced-motion";
+import { synchronizeInlineCodeReservations } from "../../shared/inline-code-reserve";
 
 const COMPLETION_ANNOUNCEMENT = "Content ready.";
 const NO_IMAGES: ReadonlyArray<ImageDescriptor> = [];
+const useBrowserLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
 const screenReaderOnlyStyle: CSSProperties = {
   border: 0,
   clip: "rect(0 0 0 0)",
@@ -70,6 +75,7 @@ const SmoothstreamPlayback = memo(({
   source,
   unstyled = false,
 }: SmoothstreamPlaybackProps) => {
+  const footnoteId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const sessionRef = useRef<StreamingSession | null>(null);
   const announcedSourceRef = useRef<string | null>(null);
@@ -86,6 +92,7 @@ const SmoothstreamPlayback = memo(({
   if (!sessionRef.current) {
     sessionRef.current = new StreamingSession(browserClock, {
       duration,
+      footnoteIdPrefix: `smoothstream-${footnoteId}-`,
       interval,
     });
   }
@@ -212,6 +219,10 @@ const SmoothstreamPlayback = memo(({
   );
 
   useAnimationPhase(rootRef);
+
+  useBrowserLayoutEffect(() => {
+    if (rootRef.current) synchronizeInlineCodeReservations(rootRef.current);
+  });
 
   useEffect(() => {
     if (mode === "static" || !announcerMounted) {

@@ -182,6 +182,65 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
       }
     });
 
+    it("renders footnote references and back links with instance-local targets", async () => {
+      const source = "Claim[^note] and again[^note].\n\n[^note]: Supporting detail.";
+      const first = await mount(source, { mode: "static" });
+      const second = await mount(source, { mode: "static" });
+      try {
+        const notes = first.element.querySelector("[data-footnotes]");
+        expect(notes).toHaveTextContent("Supporting detail.");
+        const references = first.element.querySelectorAll<HTMLAnchorElement>(
+          "[data-footnote-ref]",
+        );
+        const backLinks = notes?.querySelectorAll<HTMLAnchorElement>(
+          "[data-footnote-backref]",
+        );
+        expect(references).toHaveLength(2);
+        expect(backLinks).toHaveLength(2);
+        for (const link of [...references, ...(backLinks ?? [])]) {
+          const targetId = link.getAttribute("href")?.slice(1);
+          expect(targetId).toBeTruthy();
+          expect(first.element.querySelector(`[id="${targetId}"]`)).not.toBeNull();
+        }
+        expect(references[0]?.id).not.toBe(
+          second.element.querySelector("[data-footnote-ref]")?.id,
+        );
+      } finally {
+        first.destroy();
+        second.destroy();
+      }
+    });
+
+    it("keeps prose moving while a footnote definition arrives later", async () => {
+      const prose = "Claim[^source] continues with a full sentence after its reference, then adds enough context for the ordinary streaming lookahead to release those words before the note arrives.";
+      const driver = await mount(prose, {
+        receiving: true,
+        reducedMotion: "always",
+      });
+      try {
+        expect(driver.element).toHaveTextContent("continues with a full sentence");
+        const reference = driver.element.querySelector<HTMLAnchorElement>(
+          "[data-footnote-ref]",
+        );
+        expect(reference).not.toBeNull();
+        expect(reference).not.toHaveAttribute("href");
+        expect(driver.element.querySelector("[data-footnotes]")).toBeNull();
+
+        await driver.update(`${prose}\n\n[^source]: Evidence\n\n`, {
+          receiving: true,
+        });
+        const linked = driver.element.querySelector<HTMLAnchorElement>(
+          "[data-footnote-ref]",
+        );
+        expect(linked).toBe(reference);
+        expect(linked).toHaveAttribute("href");
+        expect(driver.element.querySelector("[data-footnotes]"))
+          .toHaveTextContent("Evidence");
+      } finally {
+        driver.destroy();
+      }
+    });
+
     it("honors the shared static presentation options", async () => {
       const driver = await mount("Static **content**.", {
         className: "contract-class",

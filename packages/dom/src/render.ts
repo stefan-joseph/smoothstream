@@ -7,6 +7,7 @@ import {
   type WebRenderNode,
 } from "@smoothstream/core/web";
 import { find, html, svg } from "property-information";
+import { synchronizeInlineCodeReservations } from "../../shared/inline-code-reserve";
 
 type DomSpec = WebRenderNode;
 type Properties = WebProperties;
@@ -184,6 +185,7 @@ export const renderDom = (
     presentationCaches.set(root, cache);
   }
   reconcileChildren(root, createWebPresentation({ ...state, cache }));
+  synchronizeInlineCodeReservations(root);
 };
 
 export const codeCopyValueFor = (element: Element): string | undefined =>

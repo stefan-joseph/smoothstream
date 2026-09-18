@@ -12,6 +12,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { RevealScheduler } from "../../packages/core/src/scheduler";
+import { StreamingSession } from "../../packages/core/src/session";
 import type { CodeHighlighter } from "../../packages/core/src/code-types";
 import { parseMarkdown } from "../../packages/core/src/markdown/parse";
 import { createMarkdownPlan } from "../../packages/core/src/markdown/unitize";
@@ -199,6 +200,41 @@ describe("Smoothstream", () => {
     expect(label).toHaveClass("first-class", "second-class");
     expect(label).toHaveAttribute("for", "example-field");
     expect(label).toHaveTextContent("Example");
+  });
+
+  it("activates a footnote reference when its scheduled definition appears", () => {
+    const source = "Claim[^note] followed by enough prose for its reference to settle before the footnote appears.\n\n[^note]: Evidence.";
+    const engine = new StreamingSession({ now: () => 0 }, {
+      duration: 30,
+      interval: 10,
+    });
+    const input = engine.prepareInput(source, false);
+    const schedules = engine.schedule(input).schedules;
+    const note = input.plan.units.find((unit) => unit.kind === "footnote");
+    const noteStart = note ? schedules.get(note.id)?.startAt : undefined;
+    if (noteStart === undefined) throw new Error("Expected a scheduled footnote.");
+    const cache = createHastRenderCache();
+    const renderAt = (now: number) => renderHast(
+      input.plan.tree,
+      schedules,
+      now,
+      new Set(),
+      new Map(),
+      cache,
+      0,
+      input.plan.units,
+    );
+
+    const view = render(<div>{renderAt(noteStart - 1)}</div>);
+    const reference = view.container.querySelector("[data-footnote-ref]");
+    expect(reference).not.toHaveAttribute("href");
+    expect(view.container.querySelector("[data-footnotes]")).toBeNull();
+    view.rerender(<div>{renderAt(noteStart)}</div>);
+    expect(view.container.querySelector("[data-footnote-ref]")).toBe(reference);
+    expect(reference).toHaveAttribute("href");
+    expect(view.container.querySelector("[data-footnotes]")).toHaveTextContent(
+      "Evidence",
+    );
   });
 
   it("does not rebuild an unchanged top-level block for a later source snapshot", () => {
@@ -2163,7 +2199,7 @@ describe("Smoothstream", () => {
       .not.toBeInTheDocument();
   });
 
-  it("does not expose a complete inline-code background to reserve its word", async () => {
+  it("reserves inline-code geometry without painting the hidden word", async () => {
     vi.useFakeTimers();
     let now = 0;
     vi.spyOn(performance, "now").mockImplementation(() => now);
@@ -2174,8 +2210,18 @@ describe("Smoothstream", () => {
       window.clearTimeout(id),
     );
 
+    const InlineCode = ({ children, ...props }: ComponentProps<"code">) => (
+      <code
+        {...props}
+        data-custom-inline-code
+        style={{ ...props.style, fontFamily: "Georgia", letterSpacing: "2px" }}
+      >
+        {children}
+      </code>
+    );
     const { container } = render(
       <Smoothstream
+        components={{ inlineCode: InlineCode }}
         interval={5}
         reducedMotion="never"
       >
@@ -2187,8 +2233,25 @@ describe("Smoothstream", () => {
       await vi.advanceTimersByTimeAsync(16);
     });
 
-    expect(container.querySelector("code")).toHaveTextContent("W");
+    const code = container.querySelector("code");
+    const reserve = code?.nextElementSibling as HTMLElement | null;
+    expect(code).toHaveTextContent("W");
+    expect(code).toHaveAttribute("data-custom-inline-code");
+    expect(reserve).toHaveAttribute("data-smoothstream-code-reserve", "ideword");
+    expect(reserve).toHaveAttribute("aria-hidden", "true");
+    expect(reserve?.textContent).toBe("");
+    expect(reserve?.style.fontFamily).toBe("Georgia");
+    expect(reserve?.style.letterSpacing).toBe("2px");
+    expect(container.querySelectorAll("code")).toHaveLength(1);
     expect(container.querySelector("code [data-smoothstream-remainder]"))
+      .not.toBeInTheDocument();
+
+    await act(async () => {
+      now = 1_000;
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(container.querySelector("code")).toHaveTextContent("Wideword");
+    expect(container.querySelector("[data-smoothstream-code-reserve]"))
       .not.toBeInTheDocument();
   });
 

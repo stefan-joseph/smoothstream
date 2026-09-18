@@ -290,6 +290,9 @@ const elementRevealKind = (
   node: HastElement,
   insidePre: boolean,
 ): MarkdownRevealKind | undefined => {
+  if (node.properties["data-smoothstream-footnote-definition"] === true) {
+    return "footnote";
+  }
   if (node.tagName === "tr") return "table-row";
   if (node.tagName === "img") return "image";
   if (node.tagName === "a" && !insidePre) return "link";
@@ -455,20 +458,20 @@ const transformText = (
   });
   const result: WebRenderNode[] = [];
 
-  runs.forEach((run, runIndex) => {
+  for (const [runIndex, run] of runs.entries()) {
     if (!run.content) {
       result.push(textSpec(`${nodeKey(node, path)}:space:${runIndex}`, run.value));
-      return;
+      continue;
     }
     const runSchedules = run.indexes.map((index) => schedules[index]);
     const scheduled = runSchedules.filter(
       (schedule): schedule is ScheduledUnit => schedule !== undefined,
     );
-    if (scheduled.length === 0) return;
+    if (scheduled.length === 0) continue;
 
     if (state.reveal === "word") {
       const schedule = scheduled[0];
-      if (!schedule || scheduled.length !== run.indexes.length) return;
+      if (!schedule || scheduled.length !== run.indexes.length) continue;
       if (!isVisible(schedule, state.now)) {
         if (retainPending) {
           result.push(elementSpec(
@@ -478,11 +481,11 @@ const transformText = (
             [textSpec(`unit:${schedule.id}:text`, run.value)],
           ));
         }
-        return;
+        continue;
       }
       if (scheduled.every((unit) => state.compactedUnitIds.has(unit.id))) {
         result.push(textSpec(`word:${schedule.id}:compacted`, run.value));
-        return;
+        continue;
       }
       result.push(elementSpec(
         `unit:${schedule.id}`,
@@ -495,11 +498,13 @@ const transformText = (
         },
         [textSpec(`unit:${schedule.id}:text`, run.value)],
       ));
-      return;
+      continue;
     }
 
+    const hasPending = scheduled.some((schedule) => !isVisible(schedule, state.now));
     if (!scheduled.some((schedule) => isVisible(schedule, state.now)) && !retainPending) {
-      return;
+      if (!reserveBufferedWords) break;
+      continue;
     }
     const children: WebRenderNode[] = [];
     let remainder = "";
@@ -546,8 +551,54 @@ const transformText = (
       }
     }
     result.push(...children);
-  });
+    // Inline-code suffixes live beside the real <code>, so later whitespace
+    // must not be emitted between the current word and its reservation.
+    if (!reserveBufferedWords && !retainPending && hasPending) break;
+  }
   return result;
+};
+
+/** The first unrevealed suffix inside an inline-code word. */
+const inlineCodeRemainder = (
+  node: HastElement,
+  state: WebPresentationState,
+): string | undefined => {
+  const segments = node.children.flatMap((child) => {
+    if (child.type !== "text") return [];
+    const range = nodeRange(child);
+    if (!range) return [];
+    const graphemes = cachedGraphemes(child.value, state.cache);
+    const schedules = resolvedTextSchedules(child, range, graphemes, state);
+    return graphemes.map((grapheme, index) => ({
+      schedule: schedules[index],
+      value: grapheme.value,
+    }));
+  });
+
+  let wordStart = 0;
+  while (wordStart < segments.length) {
+    if (/^\s+$/u.test(segments[wordStart]?.value ?? "")) {
+      wordStart += 1;
+      continue;
+    }
+    let wordEnd = wordStart;
+    while (
+      wordEnd < segments.length &&
+      !/^\s+$/u.test(segments[wordEnd]?.value ?? "")
+    ) {
+      wordEnd += 1;
+    }
+    const word = segments.slice(wordStart, wordEnd);
+    if (word.some((segment) => !segment.schedule)) return undefined;
+    const firstPending = word.findIndex((segment) =>
+      segment.schedule && !isVisible(segment.schedule, state.now)
+    );
+    if (firstPending !== -1) {
+      return word.slice(firstPending).map((segment) => segment.value).join("");
+    }
+    wordStart = wordEnd;
+  }
+  return undefined;
 };
 
 const transformCodeText = (
@@ -1054,6 +1105,21 @@ const transformNode = (
   }
   if (node.type !== "element") return [];
   if (node.tagName === "table" && !hasVisibleTableRow(node, state)) return [];
+  if (node.tagName === "section" && node.properties.dataFootnotes === true) {
+    const list = node.children.find(
+      (child): child is HastElement =>
+        child.type === "element" && child.tagName === "ol",
+    );
+    const visibleNote = list?.children.some((child) => {
+      if (child.type !== "element" || child.tagName !== "li") return false;
+      const range = nodeRange(child);
+      const schedule = range
+        ? state.schedules.get(createRangeUnitId("footnote", range))
+        : undefined;
+      return schedule !== undefined && isVisible(schedule, state.now);
+    });
+    if (!visibleNote) return [];
+  }
 
   const range = nodeRange(node);
   const kind = elementRevealKind(node, insidePre);
@@ -1091,11 +1157,32 @@ const transformNode = (
     }
     return [];
   }
+  if (kind === "footnote" && schedule) {
+    const rendered = rawNode(node, path, insidePre)[0];
+    if (!rendered || rendered.type !== "element") return [];
+    return [{
+      ...rendered,
+      properties: state.compactedUnitIds.has(schedule.id)
+        ? rendered.properties
+        : isAnimating(schedule, state.now)
+          ? activeWebProperties(rendered.properties, schedule, kind, state.now)
+          : retainedWebProperties(rendered.properties, schedule),
+    }];
+  }
+  const footnoteTarget = node.properties["data-smoothstream-footnote-target"];
+  const targetSchedule = typeof footnoteTarget === "string"
+    ? state.schedules.get(footnoteTarget)
+    : undefined;
+  const footnotePending = node.properties["data-smoothstream-footnote-pending"] === true ||
+    (typeof footnoteTarget === "string" &&
+      (!targetSchedule || !isVisible(targetSchedule, state.now)));
   if (
     kind &&
     schedule &&
     state.compactedUnitIds.has(schedule.id) &&
-    !(kind === "link" && !inlineContentIsSettled(node, state, schedule))
+    !(kind === "link" && (
+      !inlineContentIsSettled(node, state, schedule) || footnotePending
+    ))
   ) {
     return rawNode(node, path, insidePre);
   }
@@ -1179,7 +1266,7 @@ const transformNode = (
         "data-smoothstream-state": settled ? "settled" : "active",
         "data-smoothstream-unit": schedule.id,
       };
-      if (kind === "link" && !settled) {
+      if (kind === "link" && (!settled || footnotePending)) {
         delete inlineWebProperties.href;
         delete inlineWebProperties.title;
         inlineWebProperties["aria-disabled"] = true;
@@ -1226,6 +1313,26 @@ const transformNode = (
       copyReady,
       copyReady ? canonicalCodeValue(node) : undefined,
     )];
+  }
+  if (
+    node.tagName === "code" &&
+    !insidePre &&
+    state.reveal === "character" &&
+    !state.immediate &&
+    !retainPendingText
+  ) {
+    const remainder = inlineCodeRemainder(node, state);
+    if (remainder) {
+      return [rendered, elementSpec(
+        `${nodeKey(node, path)}:reserve`,
+        "span",
+        {
+          "aria-hidden": true,
+          "data-smoothstream-code-reserve": remainder,
+        },
+        [],
+      )];
+    }
   }
   return node.tagName === "table" ? [tableShell(rendered, node, path)] : [rendered];
 };

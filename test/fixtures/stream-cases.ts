@@ -574,6 +574,49 @@ const lateReferenceLink: ReadonlyArray<StreamDelivery> = [
   },
 ];
 
+const lateFootnote: ReadonlyArray<StreamDelivery> = [
+  {
+    delayMs: 250,
+    text: `## Near the beginning
+
+The first reference appears near the top of this longer example.[^overview] Keep reading for a while before following it. The extra paragraphs give the browser room to scroll when you click a number, and they make the return trip from the note easier to see. The prose can keep revealing even though the definition has not arrived yet. Nothing else in this paragraph depends on that destination being ready.
+
+A second paragraph adds some distance. Imagine a reader working through a report, pausing to check a detail, and then returning to the exact sentence where they left off. Each line contributes to the page height, so the reference at the top and the footnote section at the bottom end up far enough apart to make that movement obvious. The words themselves are only a backdrop for trying the links.
+
+The next reference sits further down the page.[^timing] You can compare where this number takes you with the first one. Both notes live in the same section, but each has its own destination and its own way back. While the stream is still open, the surrounding sentences continue to appear at the normal cadence. The small raised number is visible before the definition is complete, but it waits to become a link.
+
+## Around the middle
+
+This middle stretch gives the page another block of ordinary reading material. A long response often has explanations between citations, and those explanations should stay in place when temporary reveal spans disappear. Scroll slowly through this paragraph and notice that its line breaks do not need a footnote nearby to behave normally. The section below is intentionally a little taller than a typical demo so you can try both directions of the jump.
+
+Here is a third reference, placed after several complete paragraphs.[^navigation] Follow it once the notes arrive, then use the curved arrow at the end of its note to come back here. If you have already visited the first or second note, the page should still take you to this reference rather than to a neighboring paragraph. A little more text after the marker keeps it from sitting on a line all by itself.
+
+The first note is cited again here.[^overview] This gives that note two return links, one for each place where it was used. It is a useful case for checking that the two arrows point to different spots in the document. The surrounding copy also adds more space between those two references, so selecting the second arrow should produce a visible jump rather than a tiny adjustment in the scroll position.
+
+## Near the end
+
+There is another distinct note in this final stretch.[^layout] By now the earliest reference is well above the viewport on most screens. The short superscript should still be easy to identify inside the sentence, and its note should have the same number in the ordered list below. Keep scrolling past this paragraph to reach the last reference and then the definitions. This longer path makes it possible to test several links without replaying the example each time.
+
+The final reference closes the body text.[^ending] Its note is close to the bottom, so its return jump will be shorter than the first one. That difference is deliberate: the demo now has references near the beginning, middle, and end, plus a repeated citation. Once all five definitions have arrived, try clicking each raised number and then its matching return arrow. You can also scroll back up manually and choose a different reference.
+
+`,
+  },
+  {
+    delayMs: 1_600,
+    text: `[^overview]: This is the first note. It has two back links because the body cites it near the beginning and again around the middle. Each arrow returns to a different occurrence of the same raised number.
+
+[^timing]: The definition arrives after the body text. Until it is complete, the reference marker stays in place without sending the reader to an unfinished note.
+
+[^navigation]: The number in the paragraph links down to this list item. The curved arrow after the note links back to the corresponding place in the paragraph.
+
+[^layout]: The note list uses ordinary ordered-list numbering, with a thin separator and slightly smaller text added for the footnote section.
+
+[^ending]: This last note provides a shorter return trip. Compare it with the first note to get a feel for how far the browser scrolls for references in different parts of the page.
+
+`,
+  },
+];
+
 const autolinks = `# Complete autolinks
 
 A protocol URL such as https://example.com/releases becomes one stable link.
@@ -1084,6 +1127,11 @@ export const streamCases: ReadonlyArray<StreamCase> = [
     id: "link-late-reference",
     label: "Link: late reference",
     deliveries: lateReferenceLink,
+  },
+  {
+    id: "footnote-late-definition",
+    label: "Footnotes: late definition",
+    deliveries: lateFootnote,
   },
   {
     id: "link-autolinks",

@@ -25,6 +25,8 @@ describe("stylesheet contract", () => {
     expect(css).toContain('[data-smoothstream-kind="text"]');
     expect(css).toContain("[data-smoothstream-remainder]");
     expect(css).toContain("content: attr(data-smoothstream-remainder)");
+    expect(css).toContain("content: attr(data-smoothstream-code-reserve)");
+    expect(css).toContain("[data-smoothstream-code-reserve]");
     expect(css).toContain("visibility: hidden");
     expect(css).toMatch(
       /\[data-smoothstream-kind="block"\] \{[\s\S]*?transform-origin: center;[\s\S]*?var\(--smoothstream-duration, 1200ms\)[\s\S]*?cubic-bezier\(0\.16, 1, 0\.3, 1\)/,

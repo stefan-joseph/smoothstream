@@ -55,6 +55,31 @@ afterEach(() => {
 });
 
 describe("Smoothstream Vue SSR hydration", () => {
+  it("server-renders and hydrates linked footnotes in place", async () => {
+    const component = host({
+      markdown: "Claim[^note].\n\n[^note]: Supporting detail.",
+      mode: "static",
+    });
+    const serverHtml = await renderWithoutWindow(createSSRApp(component));
+    const container = document.createElement("div");
+    container.innerHTML = serverHtml;
+    document.body.append(container);
+    const reference = container.querySelector<HTMLAnchorElement>("[data-footnote-ref]");
+    const definition = container.querySelector("[data-footnotes] li");
+    expect(reference?.getAttribute("href")).toBe(`#${definition?.id}`);
+
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const app = createSSRApp(component);
+    app.mount(container);
+    await nextTick();
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(consoleWarn).not.toHaveBeenCalled();
+    expect(container.querySelector("[data-footnote-ref]")).toBe(reference);
+    expect(container.querySelector("[data-footnotes] li")).toBe(definition);
+    app.unmount();
+  });
+
   it("server-renders and hydrates Vue component overrides in place", async () => {
     const Heading = defineComponent({
       inheritAttrs: false,

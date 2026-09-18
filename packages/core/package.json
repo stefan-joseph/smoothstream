@@ -1,6 +1,6 @@
 {
   "name": "@smoothstream/core",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Framework-neutral streaming Markdown planning and scheduling",
   "homepage": "https://smoothstream.ai",
   "repository": {

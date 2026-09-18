@@ -47,6 +47,34 @@ afterEach(() => {
 });
 
 describe("Smoothstream SSR hydration", () => {
+  it("server-renders and hydrates linked footnotes in place", async () => {
+    const element = (
+      <Smoothstream mode="static">
+        {"Claim[^note].\n\n[^note]: Supporting detail."}
+      </Smoothstream>
+    );
+    const serverHtml = renderWithoutWindow(element);
+    const container = document.createElement("div");
+    container.innerHTML = serverHtml;
+    document.body.append(container);
+    const reference = container.querySelector<HTMLAnchorElement>("[data-footnote-ref]");
+    const definition = container.querySelector("[data-footnotes] li");
+    expect(reference?.getAttribute("href")).toBe(`#${definition?.id}`);
+
+    const recoverableErrors: unknown[] = [];
+    let root: Root | undefined;
+    await act(async () => {
+      root = hydrateRoot(container, element, {
+        onRecoverableError: (error) => recoverableErrors.push(error),
+      });
+      await Promise.resolve();
+    });
+    expect(recoverableErrors.map(String)).toEqual([]);
+    expect(container.querySelector("[data-footnote-ref]")).toBe(reference);
+    expect(container.querySelector("[data-footnotes] li")).toBe(definition);
+    await act(async () => root?.unmount());
+  });
+
   it("server-renders and hydrates React component overrides in place", async () => {
     const Heading = ({ children, ...props }: ComponentPropsWithoutRef<"h2">) => (
       <h2 {...props} data-custom-heading>{children}</h2>

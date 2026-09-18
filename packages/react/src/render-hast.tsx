@@ -31,6 +31,7 @@ import type { SmoothstreamComponents } from "./types";
 interface HastRenderBlock {
   readonly blockIds: ReadonlyArray<string>;
   readonly fingerprint: string;
+  readonly footnoteTargets: ReadonlyArray<string>;
   readonly imageUnits: ReadonlyArray<MarkdownRevealUnit>;
   readonly key: string;
   readonly node: RootContent;
@@ -332,6 +333,18 @@ const nodeFingerprint = (node: RootContent): string => {
   return `${state.first >>> 0}:${state.second >>> 0}:${state.size}`;
 };
 
+const footnoteTargetsIn = (node: RootContent): ReadonlyArray<string> => {
+  const result = new Set<string>();
+  const visit = (current: RootContent): void => {
+    if (current.type !== "element") return;
+    const target = current.properties["data-smoothstream-footnote-target"];
+    if (typeof target === "string") result.add(target);
+    current.children.forEach((child) => visit(child));
+  };
+  visit(node);
+  return [...result];
+};
+
 const prepareRenderBlocks = (
   tree: Root,
   units: ReadonlyArray<MarkdownRevealUnit>,
@@ -342,7 +355,11 @@ const prepareRenderBlocks = (
 
   const blocks = tree.children.map((node, index): HastRenderBlock => {
     const range = rootContentRange(node);
-    const blockUnits = range
+    const isFootnoteSection = node.type === "element" &&
+      node.tagName === "section" && node.properties.dataFootnotes === true;
+    const blockUnits = isFootnoteSection
+      ? units.filter((unit) => unit.kind === "footnote")
+      : range
       ? units.filter(
           (unit) =>
             unit.sourceRange.start >= range.start &&
@@ -352,10 +369,11 @@ const prepareRenderBlocks = (
     return {
       blockIds: [...new Set(blockUnits.map((unit) => unit.blockId))],
       fingerprint: nodeFingerprint(node),
+      footnoteTargets: footnoteTargetsIn(node),
       imageUnits: blockUnits.filter((unit) => unit.kind === "image"),
       key: `${
         node.type === "element" ? node.tagName : node.type
-      }:${range?.start ?? "unpositioned"}:${index}`,
+      }:${isFootnoteSection ? "footnotes" : range?.start ?? "unpositioned"}:${index}`,
       node,
       unitSignature: blockUnits.map((unit) => unit.id).join(","),
       units: blockUnits,
@@ -466,6 +484,10 @@ const blockRenderRevision = (
   const imageFollowingRevision = imageStates.length > 0
     ? visibleUnitCount
     : "none";
+  const footnoteRevision = block.footnoteTargets.map((id) => {
+    const target = schedules.get(id);
+    return target && now >= target.startAt ? "visible" : "pending";
+  }).join(",");
   const compactionRevision = compactedBlockIds
     ? block.blockIds.map((blockId) =>
         compactedBlockIds.has(blockId) ? "1" : "0"
@@ -482,6 +504,7 @@ const blockRenderRevision = (
     countThrough(timing.endTimes, now),
     compactionRevision,
     imageFollowingRevision,
+    footnoteRevision,
     imageStates.join(","),
     codeHighlightRevision,
   ].join("|");

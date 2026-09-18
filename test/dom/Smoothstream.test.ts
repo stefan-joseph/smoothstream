@@ -254,6 +254,38 @@ describe("createSmoothstream", () => {
     controller.destroy();
   });
 
+  it("reserves inline-code words beside the real code element", () => {
+    const frames = installFrameHarness();
+    const style = document.createElement("style");
+    style.textContent = '[data-smoothstream] code { font-family: Georgia; letter-spacing: 2px; }';
+    document.head.append(style);
+    const container = document.createElement("div");
+    document.body.append(container);
+    const controller = createSmoothstream(container, {
+      duration: 100,
+      interval: 10,
+      reducedMotion: "never",
+    });
+    controller.update("`Wideword`");
+
+    for (const time of [0, 10, 20, 30, 40]) frames.flush(time);
+    const code = controller.element.querySelector("code");
+    const reserve = code?.nextElementSibling as HTMLElement | null;
+    expect(code).not.toBeNull();
+    expect(code?.textContent).toMatch(/^W/u);
+    expect(reserve).toHaveAttribute("data-smoothstream-code-reserve");
+    expect(reserve?.style.fontFamily).toBe("Georgia");
+    expect(reserve?.style.letterSpacing).toBe("2px");
+    expect(controller.element.querySelectorAll("code")).toHaveLength(1);
+
+    frames.flush(1_000);
+    expect(controller.element.querySelector("code")?.textContent).toBe("Wideword");
+    expect(controller.element.querySelector("[data-smoothstream-code-reserve]"))
+      .toBeNull();
+    controller.destroy();
+    style.remove();
+  });
+
   it("atomically compacts animated text without replacing its semantic container", () => {
     const frames = installFrameHarness();
     const container = document.createElement("div");

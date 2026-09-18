@@ -23,7 +23,6 @@ const INLINE_GROUP_TAGS = new Set(["a", "code", "del", "em", "strong"]);
 const FLOW_LOOKAHEAD = 48;
 
 const HEADING_INTERVALS_AFTER = 6;
-const HORIZONTAL_RULE_DURATION_MULTIPLIER = 3;
 const HORIZONTAL_RULE_INTERVALS_AFTER = 12;
 const LIST_ITEM_INTERVALS_BEFORE = 4;
 const LIST_ITEM_BLOCK_TAGS = new Set([
@@ -143,6 +142,15 @@ const hasUnresolvedReferenceSyntax = (
   }
 
   const stableRanges = stableInlineRanges(node);
+  const footnoteRanges: SourceRange[] = [];
+  const collectFootnoteRanges = (candidate: Node): void => {
+    if (isElement(candidate) && candidate.properties.dataFootnoteRef === true) {
+      const candidateRange = nodeRange(candidate);
+      if (candidateRange) footnoteRanges.push(candidateRange);
+    }
+    if (isParent(candidate)) candidate.children.forEach(collectFootnoteRanges);
+  };
+  collectFootnoteRanges(node);
   const blockSource = source.slice(range.start, range.end);
   const isUnresolved = (
     start: number,
@@ -185,8 +193,13 @@ const hasUnresolvedReferenceSyntax = (
     }
     const start = range.start + relativeStart;
     const end = start + match[0].length;
+    const footnoteReference = (match[1] ?? "").startsWith("^") &&
+      footnoteRanges.some((footnote) =>
+        footnote.start <= start && footnote.end >= end
+      );
     if (
       !isEscapedAt(source, start) &&
+      !footnoteReference &&
       !isTaskListMarkerAt(source, start, match[1] ?? "") &&
       isUnresolved(start, end, match[1] ?? "")
     ) {
@@ -340,7 +353,7 @@ interface PlannerContext {
 
 const addRangeUnit = (
   context: PlannerContext,
-  kind: "block" | "image" | "table-row" | "text",
+  kind: "block" | "footnote" | "image" | "table-row" | "text",
   blockId: string,
   range: SourceRange,
   value: string,
@@ -369,11 +382,16 @@ const addRangeUnit = (
       // afterward even if the external resource is still loading.
       intervalsAfter: 12,
     });
+  } else if (kind === "footnote") {
+    context.units.push({
+      ...unit,
+      allowFollowingFinishOverlap: true,
+      intervalsAfter: 4,
+    });
   } else {
     context.units.push({
       ...unit,
       allowFollowingFinishOverlap: true,
-      durationMultiplier: HORIZONTAL_RULE_DURATION_MULTIPLIER,
       intervalsAfter: HORIZONTAL_RULE_INTERVALS_AFTER,
     });
   }
@@ -750,6 +768,24 @@ const collectTable = (block: Element, context: PlannerContext): void => {
   }
 };
 
+const collectFootnoteSection = (
+  section: Element,
+  context: PlannerContext,
+): void => {
+  const list = section.children.find(
+    (child): child is Element => isElement(child) && child.tagName === "ol",
+  );
+  if (!list) return;
+  for (const item of collectDirectElements(list, "li")) {
+    if (item.properties["data-smoothstream-footnote-ready"] !== true) continue;
+    const range = nodeRange(item);
+    if (!range) continue;
+    const blockId = `footnote:${range.start}`;
+    context.confirmedBlockIds.add(blockId);
+    addRangeUnit(context, "footnote", blockId, range, textContent(item));
+  }
+};
+
 const findCodeValue = (block: Element): string => {
   const code = block.children.find(
     (child): child is Element => isElement(child) && child.tagName === "code",
@@ -1012,6 +1048,10 @@ function collectBlock(
   insideBlockquote: boolean,
 ): void {
   if (context.referenceBlocked) {
+    return;
+  }
+  if (block.tagName === "section" && block.properties.dataFootnotes === true) {
+    collectFootnoteSection(block, context);
     return;
   }
   const range = nodeRange(block);

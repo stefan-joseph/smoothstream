@@ -322,6 +322,45 @@ describe("web presentation model", () => {
       .toHaveLength(2);
   });
 
+  it("reserves an inline-code word outside the styled code while revealing characters", () => {
+    const value = fixture("`Wideword next`");
+    const characters = value.input.plan.units.filter((unit) =>
+      unit.kind === "text"
+    );
+    const first = value.schedules.get(characters[0]?.id ?? "");
+    const second = value.schedules.get(characters[1]?.id ?? "");
+    const nextWord = value.schedules.get(characters[8]?.id ?? "");
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    expect(nextWord).toBeDefined();
+    if (!first || !second || !nextWord) return;
+
+    const firstFrame = project(value, { now: first.startAt });
+    expect(textContent(firstElement(firstFrame, "code") as WebRenderNode))
+      .toBe("W");
+    expect(elementsWith(firstFrame, "data-smoothstream-code-reserve")
+      .map((node) => node.properties["data-smoothstream-code-reserve"]))
+      .toEqual(["ideword"]);
+    expect(firstElement(firstFrame, "code")?.children.some((child) =>
+      child.type === "element" &&
+      "data-smoothstream-remainder" in child.properties
+    )).toBe(false);
+
+    const secondFrame = project(value, { now: second.startAt });
+    expect(elementsWith(secondFrame, "data-smoothstream-code-reserve")
+      .map((node) => node.properties["data-smoothstream-code-reserve"]))
+      .toEqual(["deword"]);
+
+    const laterFrame = project(value, { now: nextWord.startAt });
+    expect(elementsWith(laterFrame, "data-smoothstream-code-reserve")
+      .map((node) => node.properties["data-smoothstream-code-reserve"]))
+      .toEqual(["ext"]);
+
+    const completed = project(value, { now: 10_000 });
+    expect(elementsWith(completed, "data-smoothstream-code-reserve"))
+      .toHaveLength(0);
+  });
+
   it("enhances plain code without replacing the code block, toolbar, or copy control", () => {
     const value = fixture("```ts\nconst ready = true;\n```");
     const request = value.input.codeBlocks[0];

@@ -1,6 +1,6 @@
 {
   "name": "@smoothstream/react",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Deterministic, paced Markdown reveal for React",
   "homepage": "https://smoothstream.ai",
   "repository": {
@@ -48,8 +48,8 @@
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "dependencies": {
-    "@smoothstream/core": "^0.1.3",
-    "@smoothstream/styles": "^0.1.4",
+    "@smoothstream/core": "^0.1.7",
+    "@smoothstream/styles": "^0.1.6",
     "property-information": "^7.2.0"
   }
 }

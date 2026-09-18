@@ -4,6 +4,10 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import { unified } from "unified";
+import {
+  prepareFootnotes,
+  provisionalFootnoteDefinitions,
+} from "./footnotes";
 
 /**
  * GitHub's sanitizer schema plus Smoothstream's URL policy. Relative
@@ -28,8 +32,34 @@ const processor = unified()
   .use(remarkRehype)
   .use(rehypeSanitize, schema);
 
+export interface ParseMarkdownOptions {
+  /** Whether later append-only input may supply a footnote definition. */
+  readonly inputOpen?: boolean;
+  /** Stable namespace for generated footnote fragment targets. */
+  readonly footnoteIdPrefix?: string;
+}
+
 /** Parse Markdown into framework-neutral semantic HTML syntax. */
-export const parseMarkdown = (source: string): HastRoot => {
-  const mdast = processor.parse(source);
-  return processor.runSync(mdast) as HastRoot;
+export const parseMarkdown = (
+  source: string,
+  options: ParseMarkdownOptions = {},
+): HastRoot => {
+  const original = processor.parse(source);
+  const provisional = options.inputOpen
+    ? provisionalFootnoteDefinitions(original, source)
+    : [];
+  const markdown = provisional.length > 0
+    ? processor.parse(`${source}\n\n${provisional.map((label) =>
+      `[^${label}]:`
+    ).join("\n\n")}`)
+    : original;
+  const tree = processor.runSync(markdown) as HastRoot;
+  return prepareFootnotes(
+    tree,
+    markdown,
+    original,
+    source,
+    options.inputOpen ?? false,
+    options.footnoteIdPrefix ?? "",
+  );
 };

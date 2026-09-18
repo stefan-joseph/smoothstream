@@ -108,6 +108,49 @@ describe("Smoothstream Vue", () => {
     view.app.unmount();
   });
 
+  it("matches a custom inline-code font without duplicating the code component", async () => {
+    vi.useFakeTimers();
+    let now = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) =>
+      window.setTimeout(() => callback(now), 16)
+    );
+    vi.stubGlobal("cancelAnimationFrame", (id: number) =>
+      window.clearTimeout(id)
+    );
+    const InlineCode = defineComponent({
+      inheritAttrs: false,
+      setup: (_, { attrs, slots }) => () => h(
+        "code",
+        {
+          ...attrs,
+          "data-custom-inline-code": true,
+          style: { fontFamily: "Georgia", letterSpacing: "2px" },
+        },
+        slots.default?.(),
+      ),
+    });
+    const view = mountSmoothstream({
+      components: { inlineCode: InlineCode },
+      duration: 100,
+      interval: 5,
+      markdown: "`Wideword`",
+      reducedMotion: "never",
+    });
+
+    now = 30;
+    await vi.advanceTimersByTimeAsync(48);
+    await nextTick();
+    const code = view.element.querySelector("code");
+    const reserve = code?.nextElementSibling as HTMLElement | null;
+    expect(code).toHaveAttribute("data-custom-inline-code");
+    expect(reserve).toHaveAttribute("data-smoothstream-code-reserve");
+    expect(reserve?.style.fontFamily).toBe("Georgia");
+    expect(reserve?.style.letterSpacing).toBe("2px");
+    expect(view.element.querySelectorAll("code")).toHaveLength(1);
+    view.app.unmount();
+  });
+
   it("uses the markdown prop and forwards Vue attributes to its root", () => {
     const view = mountSmoothstream({
       "aria-label": "Assistant response",

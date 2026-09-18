@@ -11,6 +11,7 @@ export interface SourceRange {
 export type MarkdownRevealKind =
   | "block"
   | "code-line"
+  | "footnote"
   | "heading"
   | "image"
   | "inline"

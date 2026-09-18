@@ -458,7 +458,7 @@ describe("createMarkdownPlan", () => {
     ).toBe(30);
   });
 
-  it("paces a horizontal rule relatively with a longer overlapping reveal", () => {
+  it("paces a horizontal rule using the configured duration", () => {
     const source = "Before\n\n---\n\nAfter";
     const plan = createMarkdownPlan(parseMarkdown(source), source, {
       inputOpen: false,
@@ -480,17 +480,16 @@ describe("createMarkdownPlan", () => {
 
     expect(rule).toMatchObject({
       allowFollowingFinishOverlap: true,
-      durationMultiplier: 3,
       intervalsAfter: 12,
       value: "",
     });
     expect(rule?.delayAfter).toBeUndefined();
     expect(rule?.duration).toBeUndefined();
-    expect(ruleSchedule?.duration).toBe(1200);
+    expect(rule?.durationMultiplier).toBeUndefined();
+    expect(ruleSchedule?.duration).toBe(400);
     expect(
       (followingSchedule?.startAt ?? 0) - (ruleSchedule?.startAt ?? 0),
     ).toBe(60);
-    expect(scheduler.snapshot().lastEndAt).toBe(ruleSchedule?.endAt);
   });
 
   it("commits stable nested items inside an open parent item", () => {
