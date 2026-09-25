@@ -38,6 +38,10 @@ import {
 } from "vue";
 import { webNodesToVue } from "./render-web";
 import { synchronizeInlineCodeReservations } from "../../shared/inline-code-reserve";
+import {
+  presentationComplete,
+  revealComplete,
+} from "../../shared/presentation-completion";
 import type {
   SmoothstreamMode,
   SmoothstreamComponents,
@@ -93,6 +97,7 @@ interface SynchronizedPhase {
 export const Smoothstream = defineComponent({
   name: "Smoothstream",
   inheritAttrs: false,
+  emits: ["reveal-complete", "presentation-complete"],
   props: {
     codeHighlighter: Object as PropType<CodeHighlighter | undefined>,
     components: Object as PropType<SmoothstreamComponents | undefined>,
@@ -129,7 +134,7 @@ export const Smoothstream = defineComponent({
       type: Boolean,
     },
   },
-  setup(props, { attrs }) {
+  setup(props, { attrs, emit }) {
     let footnoteIdPrefix = `smoothstream-${useId()}-`;
     const root = ref<HTMLDivElement | null>(null);
     const mounted = ref(false);
@@ -165,6 +170,8 @@ export const Smoothstream = defineComponent({
     let destroyed = false;
     let announcedSource: string | undefined;
     let completionRendered = false;
+    let revealCompletePublished = false;
+    let presentationCompletePublished = false;
 
     const codeRequestsByBlock = new Map<number, string>();
     const codeSessionsByBlock = new Map<number, object>();
@@ -574,6 +581,26 @@ export const Smoothstream = defineComponent({
       synchronizeAnimationPhases();
       if (root.value) synchronizeInlineCodeReservations(root.value);
       publishCompletionIfReady();
+      const input = currentInput.value;
+      const presentation = lastPresentation;
+      const element = root.value;
+      if (!mounted.value || !input || !presentation || !element) return;
+      if (
+        !revealCompletePublished &&
+        revealComplete(input, presentation, element)
+      ) {
+        revealCompletePublished = true;
+        emit("reveal-complete");
+      }
+      if (
+        !destroyed &&
+        revealCompletePublished &&
+        !presentationCompletePublished &&
+        presentationComplete(input, presentation, element)
+      ) {
+        presentationCompletePublished = true;
+        emit("presentation-complete");
+      }
     };
 
     watch(

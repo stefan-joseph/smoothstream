@@ -538,6 +538,9 @@ const longInlineCode = `# Long inline code
 
 A longer expression should remain inline and wrap naturally when needed: \`renderer.update(message.content, { receiving: status === "streaming", interval: 3, duration: 1000, reducedMotion: "system" })\` while the surrounding sentence continues normally after it.`;
 
+const inlineCodePunctuation =
+  "The release changed the retry behavior in `reserveInventory()`.";
+
 const inlineSettlement = `# Inline settlement boundary
 
 Ordinary text before **strong emphasis**, *quiet emphasis*, ~~deleted text~~, [a complete link](https://example.com/docs), \`inline code\`, and a small ![completed inline marker](/image-inline.svg) should keep exactly the same line geometry when its temporary reveal spans are removed.
@@ -1107,6 +1110,11 @@ export const streamCases: ReadonlyArray<StreamCase> = [
     id: "inline-long-code",
     label: "Inline: long code",
     deliveries: chunkMarkdown(longInlineCode),
+  },
+  {
+    id: "inline-code-punctuation",
+    label: "Inline: code with punctuation",
+    deliveries: [{ delayMs: 0, text: inlineCodePunctuation }],
   },
   {
     id: "inline-settlement",

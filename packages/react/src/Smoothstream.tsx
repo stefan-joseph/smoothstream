@@ -34,6 +34,10 @@ import { useCoalescedInput } from "./use-coalesced-input";
 import { useImageReadiness } from "./use-image-readiness";
 import { useReducedMotion } from "./use-reduced-motion";
 import { synchronizeInlineCodeReservations } from "../../shared/inline-code-reserve";
+import {
+  presentationComplete,
+  revealComplete,
+} from "../../shared/presentation-completion";
 
 const COMPLETION_ANNOUNCEMENT = "Content ready.";
 const NO_IMAGES: ReadonlyArray<ImageDescriptor> = [];
@@ -53,6 +57,7 @@ const screenReaderOnlyStyle: CSSProperties = {
 };
 
 interface SmoothstreamPlaybackProps extends Omit<SmoothstreamProps, "children"> {
+  completionState: { presentation: boolean; reveal: boolean };
   duration: number;
   interval: number;
   mode: SmoothstreamMode;
@@ -64,12 +69,15 @@ interface SmoothstreamPlaybackProps extends Omit<SmoothstreamProps, "children"> 
 const SmoothstreamPlayback = memo(({
   className,
   codeHighlighter,
+  completionState,
   components,
   duration,
   receiving = false,
   interval,
   mode,
   motionDisabled,
+  onPresentationComplete,
+  onRevealComplete,
   reducedMotion = "system",
   reveal,
   source,
@@ -225,6 +233,26 @@ const SmoothstreamPlayback = memo(({
   });
 
   useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    if (
+      !completionState.reveal &&
+      revealComplete(preparedInput, presentation, root)
+    ) {
+      completionState.reveal = true;
+      onRevealComplete?.();
+    }
+    if (
+      completionState.reveal &&
+      !completionState.presentation &&
+      presentationComplete(preparedInput, presentation, root)
+    ) {
+      completionState.presentation = true;
+      onPresentationComplete?.();
+    }
+  });
+
+  useEffect(() => {
     if (mode === "static" || !announcerMounted) {
       return;
     }
@@ -336,6 +364,7 @@ const markdownFromChildren = (children: unknown): string => {
 export const Smoothstream = (
   props: SmoothstreamProps,
 ): ReactElement => {
+  const completionState = useRef({ presentation: false, reveal: false });
   const duration = props.duration ?? 1_000;
   const interval = props.interval ?? 3;
   const mode = props.mode ?? "streaming";
@@ -365,6 +394,7 @@ export const Smoothstream = (
   const { children: _children, ...playbackProps } = props;
   return createElement(SmoothstreamPlayback, {
     ...playbackProps,
+    completionState: completionState.current,
     duration,
     receiving: input.receiving,
     interval,

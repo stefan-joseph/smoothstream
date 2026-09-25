@@ -486,6 +486,63 @@ describe("Smoothstream", () => {
     expect(view.container).not.toHaveTextContent("Content ready.");
   });
 
+  it("publishes reveal completion before the final entrance settles", async () => {
+    vi.useFakeTimers();
+    let now = 0;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) =>
+      window.setTimeout(() => callback(now), 16),
+    );
+    vi.stubGlobal("cancelAnimationFrame", (id: number) =>
+      window.clearTimeout(id),
+    );
+
+    const calls: string[] = [];
+    const view = render(
+      <Smoothstream
+        onRevealComplete={() => calls.push("reveal")}
+        onPresentationComplete={() => calls.push("presentation")}
+        reducedMotion="never"
+      >
+        {"Hi"}
+      </Smoothstream>,
+    );
+    expect(calls).toEqual([]);
+
+    await act(async () => {
+      now = 5;
+      await vi.advanceTimersByTimeAsync(16);
+    });
+    expect(view.container).toHaveTextContent("Hi");
+    expect(view.container.querySelector("[data-smoothstream-unit]")).not.toBeNull();
+    expect(calls).toEqual(["reveal"]);
+
+    await act(async () => {
+      now = 1_000;
+      await vi.runAllTimersAsync();
+    });
+    expect(view.container.querySelector("[data-smoothstream-unit]")).toBeNull();
+    expect(calls).toEqual(["reveal", "presentation"]);
+  });
+
+  it("does not repeat completion callbacks when playback settings change", () => {
+    const calls: string[] = [];
+    const props = {
+      mode: "static" as const,
+      onPresentationComplete: () => calls.push("presentation"),
+      onRevealComplete: () => calls.push("reveal"),
+    };
+    const view = render(
+      <Smoothstream {...props} interval={5}>{"Saved response"}</Smoothstream>,
+    );
+    expect(calls).toEqual(["reveal", "presentation"]);
+
+    view.rerender(
+      <Smoothstream {...props} interval={10}>{"Saved response"}</Smoothstream>,
+    );
+    expect(calls).toEqual(["reveal", "presentation"]);
+  });
+
   it("does not announce while completed blocks can still receive input", async () => {
     vi.useFakeTimers();
     let now = 0;

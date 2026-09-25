@@ -38,6 +38,23 @@ Set `receiving` to `false` when no more Markdown will arrive. Use static mode
 when mounting content that was already complete, and give a different response
 a new React `key`.
 
+Use `onRevealComplete` when the final word or character begins appearing, for
+example to show follow-up controls or start the next Markdown segment. Use
+`onPresentationComplete` when entrances finish and temporary reveal nodes
+have compacted. Each callback fires once per mounted
+response after input closes. Static and reduced-motion responses can fire both
+after the same client commit, in that order.
+
+```tsx
+<Smoothstream
+  receiving={receiving}
+  onRevealComplete={() => setShowNextStep(true)}
+  onPresentationComplete={() => measureFinalLayout()}
+>
+  {markdown}
+</Smoothstream>
+```
+
 Override semantic elements produced by Markdown with React components:
 
 ```tsx

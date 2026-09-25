@@ -601,6 +601,25 @@ const inlineCodeRemainder = (
   return undefined;
 };
 
+/** Reserve an unspaced text run until its first character is revealed. */
+const pendingFollowingText = (
+  node: Text,
+  state: WebPresentationState,
+): string | undefined => {
+  const range = nodeRange(node);
+  if (!range) return undefined;
+  const segments = cachedGraphemes(node.value, state.cache);
+  const runEnd = segments.findIndex((segment) => !/\S/u.test(segment.value));
+  const run = runEnd === -1 ? segments : segments.slice(0, runEnd);
+  if (run.length === 0) return undefined;
+
+  const schedules = resolvedTextSchedules(node, range, segments, state);
+  const first = schedules[0];
+  if (!first || isVisible(first, state.now)) return undefined;
+  if (run.some((_, index) => !schedules[index])) return undefined;
+  return run.map((segment) => segment.value).join("");
+};
+
 const transformCodeText = (
   node: Text,
   blockStart: number,
@@ -1225,16 +1244,42 @@ const transformNode = (
       }
       continue;
     }
-    children.push(...transformNode(
+    const childPath = `${path}.${index}`;
+    const childRetainsPendingText = retainPendingText || kind === "table-row";
+    const renderedChild = transformNode(
       child,
       state,
-      `${path}.${index}`,
+      childPath,
       nextInsidePre,
       nextCodeBlockStart,
-      retainPendingText || kind === "table-row",
+      childRetainsPendingText,
       child === standaloneChild,
       reserveBufferedWords && node.tagName !== "code",
-    ));
+    );
+    children.push(...renderedChild);
+
+    if (
+      child.type === "element" &&
+      child.tagName === "code" &&
+      !nextInsidePre &&
+      state.reveal === "character" &&
+      !state.immediate &&
+      !childRetainsPendingText &&
+      renderedChild.length > 0
+    ) {
+      const following = node.children[index + 1];
+      const pending = following?.type === "text"
+        ? pendingFollowingText(following, state)
+        : undefined;
+      if (pending && following?.type === "text") {
+        children.push(elementSpec(
+          `${nodeKey(following, `${path}.${index + 1}`)}:leading-reserve`,
+          "span",
+          { "aria-hidden": true, "data-smoothstream-remainder": pending },
+          [],
+        ));
+      }
+    }
 
     if (
       node.tagName === "p" &&

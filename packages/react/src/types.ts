@@ -34,6 +34,10 @@ export interface SmoothstreamProps {
   receiving?: boolean;
   /** Base cadence in milliseconds; word mode preserves it while grouping characters. @default 3 */
   interval?: number;
+  /** Called once after the final unit begins appearing, without waiting for its entrance to finish. */
+  onRevealComplete?: () => void;
+  /** Called once after entrances finish and temporary reveal DOM has compacted. */
+  onPresentationComplete?: () => void;
   /** Progressively reveal streaming content or render completed Markdown immediately. @default "streaming" */
   mode?: SmoothstreamMode;
   /** Reduced-motion policy: follow the system preference, always reduce, or never reduce. @default "system" */

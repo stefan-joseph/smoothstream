@@ -236,6 +236,32 @@ to govern interactive feedback such as the code copy control. Once a streaming
 instance's `receiving` prop becomes `false`, treat that instance as complete and
 start a new one for a different response.
 
+## Presentation callbacks
+
+`onRevealComplete` fires once after input closes and the final presentation
+unit begins appearing in the committed DOM. It does not wait for that unit's
+entrance animation to finish. A final image waits until it has decoded or failed
+before it enters. Use this callback to show follow-up controls or start another
+Smoothstream instance after a completed Markdown segment.
+
+`onPresentationComplete` fires once after all Smoothstream entrances finish and
+temporary reveal nodes compact to semantic HTML. In animated streaming mode,
+resources that gate the reveal have resolved or failed. Static and reduced-motion
+rendering may still allow the browser to load images afterward. Both callbacks fire in that
+order after client rendering; static mode and reduced motion may deliver them
+in the same commit. Empty responses also deliver both. Neither callback fires
+while `receiving` is true, and unmounting or destroying an instance cancels
+pending callbacks. Browser paint timing is not observable precisely, so the
+first callback promises a committed entrance rather than an exact painted
+pixel.
+
+React uses `onRevealComplete` and `onPresentationComplete` props, Vue emits
+`reveal-complete` and `presentation-complete`, and the DOM controller accepts
+callbacks with the React names in `createSmoothstream` options. When placing a
+component between two Markdown segments, finish the first instance at a
+complete block boundary and start a separate instance for the second segment;
+each instance parses its own Markdown document.
+
 Block and component reveal strategies remain intentionally internal, while
 Smoothstream provides opinionated but configurable text timing. `reveal` selects
 `"character"` or `"word"`; `interval` controls the base character cadence.

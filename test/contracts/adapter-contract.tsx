@@ -16,6 +16,8 @@ export interface AdapterContractOptions {
   readonly duration?: number;
   readonly interval?: number;
   readonly mode?: "static" | "streaming";
+  readonly onPresentationComplete?: () => void;
+  readonly onRevealComplete?: () => void;
   readonly receiving?: boolean;
   readonly reducedMotion?: "always" | "never" | "system";
   readonly reveal?: "character" | "word";
@@ -177,6 +179,40 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
         await driver.update(source, { receiving: false });
         await driver.flush();
         expectSemanticMarkdown(driver.element, source);
+      } finally {
+        driver.destroy();
+      }
+    });
+
+    it("publishes the two completion callbacks once and in order", async () => {
+      const calls: string[] = [];
+      const source = "A completed response.";
+      const driver = await mount(source, {
+        onPresentationComplete: () => calls.push("presentation"),
+        onRevealComplete: () => calls.push("reveal"),
+        receiving: true,
+        reducedMotion: "always",
+      });
+      try {
+        expect(calls).toEqual([]);
+        await driver.update(source, { receiving: false });
+        expect(calls).toEqual(["reveal", "presentation"]);
+        await driver.flush();
+        expect(calls).toEqual(["reveal", "presentation"]);
+      } finally {
+        driver.destroy();
+      }
+    });
+
+    it("publishes both callbacks for an empty static response", async () => {
+      const calls: string[] = [];
+      const driver = await mount("", {
+        mode: "static",
+        onPresentationComplete: () => calls.push("presentation"),
+        onRevealComplete: () => calls.push("reveal"),
+      });
+      try {
+        expect(calls).toEqual(["reveal", "presentation"]);
       } finally {
         driver.destroy();
       }
@@ -400,6 +436,7 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
 
     it("waits for image decoding without blocking later content", async () => {
       let resolveDecode: (() => void) | undefined;
+      const calls: string[] = [];
       class ControlledImage {
         static readonly instances: ControlledImage[] = [];
         complete = false;
@@ -425,6 +462,8 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
       const driver = await mount("![Diagram](/diagram.svg)\n\nLater content.", {
         duration: 0,
         interval: 0,
+        onPresentationComplete: () => calls.push("presentation"),
+        onRevealComplete: () => calls.push("reveal"),
         reducedMotion: "never",
       });
       try {
@@ -434,6 +473,7 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
           "pending",
         );
         expect(driver.element).toHaveTextContent("Later content.");
+        expect(calls).toEqual(["reveal"]);
 
         const request = ControlledImage.instances[0];
         if (!request) throw new Error("Expected an image preload request.");
@@ -457,6 +497,7 @@ export const runAdapterContract = ({ name, mount }: AdapterContract): void => {
           "pending",
         );
         expect(readyImage).not.toHaveAttribute("aria-hidden");
+        expect(calls).toEqual(["reveal", "presentation"]);
       } finally {
         driver.destroy();
       }

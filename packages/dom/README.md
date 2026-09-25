@@ -38,6 +38,20 @@ stream.update(completedMarkdown, { receiving: false });
 Use static mode when creating a controller for content that was already
 complete. Create a new controller to render a different response.
 
+Pass `onRevealComplete` to act when the final word or character begins
+appearing, and `onPresentationComplete` to act after all entrances finish and
+temporary reveal nodes compact. Both callbacks fire once per controller
+after input closes, in that order. Static and reduced-motion responses may
+deliver both in the same render.
+
+```ts
+const stream = createSmoothstream(container, {
+  receiving: true,
+  onRevealComplete: () => showNextStep(),
+  onPresentationComplete: () => measureFinalLayout(),
+});
+```
+
 `codeHighlighter` is optional. Install `@smoothstream/code` only when fenced
 code should be highlighted.
 

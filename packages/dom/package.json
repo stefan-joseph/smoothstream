@@ -1,6 +1,6 @@
 {
   "name": "@smoothstream/dom",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Deterministic, paced Markdown reveal for the browser DOM",
   "homepage": "https://smoothstream.ai",
   "repository": {
@@ -44,7 +44,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@smoothstream/core": "^0.1.7",
+    "@smoothstream/core": "^0.1.8",
     "@smoothstream/styles": "^0.1.6",
     "property-information": "^7.2.0"
   }

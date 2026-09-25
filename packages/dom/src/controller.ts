@@ -13,6 +13,10 @@ import {
   type StreamingPlaybackSnapshot,
 } from "@smoothstream/core";
 import { codeCopyValueFor, renderDom } from "./render";
+import {
+  presentationComplete,
+  revealComplete,
+} from "../../shared/presentation-completion";
 import type {
   SmoothstreamController,
   SmoothstreamMode,
@@ -57,6 +61,8 @@ class DomStreamingController implements SmoothstreamController {
   readonly #imageReadiness = new Map<string, ImageReadiness>();
   readonly #interval: number;
   readonly #mode: SmoothstreamMode;
+  readonly #onPresentationComplete: (() => void) | undefined;
+  readonly #onRevealComplete: (() => void) | undefined;
   readonly #reducedMotion: SmoothstreamReducedMotion;
   readonly #reveal: "character" | "word";
   readonly #session: StreamingSession;
@@ -65,6 +71,8 @@ class DomStreamingController implements SmoothstreamController {
 
   #announcedSource: string | null = null;
   #completionRendered = false;
+  #presentationCompletePublished = false;
+  #revealCompletePublished = false;
   #currentInput: StreamingInputSnapshot | null = null;
   #currentPlayback: StreamingPlaybackSnapshot | null = null;
   #destroyed = false;
@@ -87,6 +95,8 @@ class DomStreamingController implements SmoothstreamController {
     this.#duration = options.duration ?? 1_000;
     this.#interval = options.interval ?? 3;
     this.#mode = options.mode ?? "streaming";
+    this.#onPresentationComplete = options.onPresentationComplete;
+    this.#onRevealComplete = options.onRevealComplete;
     this.#reducedMotion = options.reducedMotion ?? "system";
     this.#reveal = options.reveal ?? "character";
     this.#requestedReceiving = options.receiving ?? false;
@@ -320,6 +330,23 @@ class DomStreamingController implements SmoothstreamController {
       if (this.#announcer) {
         this.#announcer.textContent = COMPLETION_ANNOUNCEMENT;
       }
+    }
+
+    if (
+      !this.#revealCompletePublished &&
+      revealComplete(input, presentation, this.element)
+    ) {
+      this.#revealCompletePublished = true;
+      this.#onRevealComplete?.();
+    }
+    if (
+      !this.#destroyed &&
+      this.#revealCompletePublished &&
+      !this.#presentationCompletePublished &&
+      presentationComplete(input, presentation, this.element)
+    ) {
+      this.#presentationCompletePublished = true;
+      this.#onPresentationComplete?.();
     }
   }
 

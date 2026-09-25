@@ -14,6 +14,10 @@ export interface SmoothstreamOptions {
   receiving?: boolean;
   /** Base cadence between presentation units, in milliseconds. @default 3 */
   interval?: number;
+  /** Called once after the final unit begins appearing, without waiting for its entrance to finish. */
+  onRevealComplete?: () => void;
+  /** Called once after entrances finish and temporary reveal DOM has compacted. */
+  onPresentationComplete?: () => void;
   /** Progressively reveal streaming content or render completed Markdown immediately. @default "streaming" */
   mode?: SmoothstreamMode;
   /** Follow the system preference, always reduce motion, or never reduce it. @default "system" */

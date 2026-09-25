@@ -32,6 +32,21 @@ Each mounted component represents one append-only response. Give a different
 response a new Vue `key`. Static rendering is SSR-safe; browser-only playback,
 resource loading, highlighting, and clipboard work begin after mounting.
 
+Listen for `@reveal-complete` when the final word or character begins appearing,
+or `@presentation-complete` when entrances finish and reveal nodes compact.
+Each event fires once per mounted response after input closes. Static and
+reduced-motion responses can emit both after the same client render, in that
+order.
+
+```vue
+<Smoothstream
+  :markdown="message.content"
+  :receiving="message.isStreaming"
+  @reveal-complete="showNextStep = true"
+  @presentation-complete="measureFinalLayout"
+/>
+```
+
 Pass Vue components for semantic elements produced by Markdown:
 
 ```vue

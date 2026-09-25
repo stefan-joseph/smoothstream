@@ -361,6 +361,45 @@ describe("web presentation model", () => {
       .toHaveLength(0);
   });
 
+  it("reserves adjacent punctuation until it appears after inline code", () => {
+    const source = "The release changed the retry behavior in `reserveInventory()`.";
+    const value = fixture(source);
+    const codeStart = source.indexOf("reserveInventory()");
+    const periodStart = source.lastIndexOf(".");
+    const codeUnit = value.input.plan.units.find((unit) =>
+      unit.kind === "text" && unit.sourceRange.start === codeStart
+    );
+    const periodUnit = value.input.plan.units.find((unit) =>
+      unit.kind === "text" && unit.sourceRange.start === periodStart
+    );
+    const codeSchedule = value.schedules.get(codeUnit?.id ?? "");
+    const periodSchedule = value.schedules.get(periodUnit?.id ?? "");
+    expect(codeSchedule).toBeDefined();
+    expect(periodSchedule).toBeDefined();
+    if (!codeSchedule || !periodSchedule) return;
+
+    const firstFrame = project(value, { now: codeSchedule.startAt });
+    expect(elementsWith(firstFrame, "data-smoothstream-code-reserve"))
+      .toHaveLength(1);
+    expect(elementsWith(firstFrame, "data-smoothstream-remainder").map((node) =>
+      node.properties["data-smoothstream-remainder"]
+    )).toEqual(["."]);
+
+    const codeFinished = project(value, { now: periodSchedule.startAt - 1 });
+    expect(textContent(firstElement(codeFinished, "code") as WebRenderNode))
+      .toBe("reserveInventory()");
+    expect(elementsWith(codeFinished, "data-smoothstream-remainder").map((node) =>
+      node.properties["data-smoothstream-remainder"]
+    )).toEqual(["."]);
+
+    const periodVisible = project(value, { now: periodSchedule.startAt });
+    expect(elementsWith(periodVisible, "data-smoothstream-remainder"))
+      .toHaveLength(0);
+    expect(content(periodVisible)).toBe(
+      "The release changed the retry behavior in reserveInventory().",
+    );
+  });
+
   it("enhances plain code without replacing the code block, toolbar, or copy control", () => {
     const value = fixture("```ts\nconst ready = true;\n```");
     const request = value.input.codeBlocks[0];
